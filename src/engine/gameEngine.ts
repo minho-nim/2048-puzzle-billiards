@@ -473,7 +473,7 @@ export class GameEngine {
       if (b.pulseAge !== undefined) {
         b.pulseAge += dt;
         const progress = Math.min(1, b.pulseAge / 0.26);
-        b.scale = 1 + Math.sin(progress * Math.PI) * 0.12;
+        b.scale = 1 + Math.sin(progress * Math.PI) * 0.22;
         if (progress === 1) {
           b.scale = 1;
           delete b.pulseAge;

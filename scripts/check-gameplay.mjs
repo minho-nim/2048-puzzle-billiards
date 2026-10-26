@@ -15,6 +15,7 @@ const result = await build({
       if (id === entry) return [
         `export { GameEngine } from ${modulePath('src/engine/gameEngine.ts')};`,
         `export { aimEngine } from ${modulePath('src/engine/aimEngine.ts')};`,
+        `export { physicsEngine } from ${modulePath('src/engine/physicsEngine.ts')};`,
         `export { spawnEngine } from ${modulePath('src/engine/spawnEngine.ts')};`,
         `export { soundManager } from ${modulePath('src/utils/audio.ts')};`,
       ].join('\n');
@@ -31,7 +32,7 @@ globalThis.localStorage = {
   setItem: (key, value) => memory.set(key, value),
 };
 globalThis.window = {};
-const { GameEngine, aimEngine, spawnEngine, soundManager } = await import(
+const { GameEngine, aimEngine, physicsEngine, spawnEngine, soundManager } = await import(
   `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
 );
 
@@ -66,7 +67,7 @@ for (const count of [1, 2, 3, 4, 5, 8]) {
   assert.ok(mergedBall, 'merged balls start a visual pulse');
   const physicalRadius = mergedBall.radius;
   engine.updateVisualEffects(0.13);
-  assert.ok(mergedBall.scale > 1.1, 'merge pulse grows above normal size');
+  assert.ok(mergedBall.scale > 1.2, 'merge pulse visibly grows above 120% size');
   assert.equal(mergedBall.radius, physicalRadius, 'pulse does not change collision radius');
   engine.updateVisualEffects(0.13);
   assert.equal(mergedBall.scale, 1, 'pulse returns exactly to normal size');
@@ -127,6 +128,8 @@ for (const full of [false, true]) {
   assert.equal(engine.balls.length, 3, 'spawn two 2s when the first leaves no pair');
   assert.equal(engine.state.life, 2, 'two spawned balls still cost only one life');
   assert.equal(engine.balls.filter((item) => item.pulseAge === 0).length, 2, 'each spawned ball pulses');
+  engine.updateVisualEffects(0.13);
+  assert.ok(engine.balls.filter((item) => !item.isBlackNumber).every((item) => item.scale > 1.2), 'new balls use the larger pulse too');
   assert.deepEqual(engine.state.lifeChangedSlots, [2], 'only the spent slot pulses');
 }
 {
@@ -156,4 +159,13 @@ for (const full of [false, true]) {
   assert.equal(short.destX, long.destX, 'short and long drags share the same trajectory preview');
   assert.equal(aimEngine.calculateAim(cue, { dx: 1, dy: 0 }, [cue]), null, 'a tap is not a shot');
 }
-console.log('Gameplay checks passed: 1/2/3/4/5/8 merges, six repeated cue growths, full/zero life, spawn timing/debit, fixed shot strength.');
+{
+  const cue = ball(2, 280, 130, true);
+  const other = ball(4, 280, 430);
+  cue.vx = other.vx = 5;
+  cue.isMoving = other.isMoving = true;
+  for (let index = 0; index < 45; index++) physicsEngine.step([cue, other]);
+  assert.equal(cue.trail.length, 36, 'cue trail retains the longer 36-point history');
+  assert.equal(other.trail, undefined, 'other balls do not leave a trail');
+}
+console.log('Gameplay checks passed: life timing/rewards, larger spawn/merge pulses, longer cue-only trail, fixed shot strength.');

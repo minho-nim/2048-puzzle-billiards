@@ -8,7 +8,7 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-const titles = ['조준', '발사', '합체', '생명', '새 공', '마지막 기회'];
+const titles = ['조준', '발사', '합체', '생명'];
 
 function Ball({ value, controlled = false, size = 48 }: { value: number; controlled?: boolean; size?: number }) {
   const color = getBallColor(value);
@@ -110,37 +110,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-3 items-center"><Lives active={1} total={2} /><span aria-hidden="true">→</span><Lives active={2} total={2} /></div>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[15px] font-black text-[#8544DB] text-center">검은 글씨 공이 커지면<br />최대 +1 · 생명 +2</p>
-            <div className="flex gap-3 items-center"><Lives active={1} total={2} /><span aria-hidden="true">→</span><Lives active={3} total={3} /></div>
+            <p className="text-[15px] font-black text-[#8544DB] text-center">검은 글씨 공이 커지면<br />최대 +1</p>
+            <div className="flex gap-3 items-center"><Lives active={2} total={2} /><span aria-hidden="true">→</span><Lives active={3} total={3} /></div>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[15px] font-black text-[#D93845]">새 2공이 생기면 생명 −1</p>
+            <p className="text-[15px] font-black text-[#D93845]">새 공이 생기면 생명 −1</p>
             <div className="flex gap-3 items-center"><Lives active={2} total={2} /><span aria-hidden="true">→</span><Lives active={1} total={2} /></div>
           </div>
           <p className="text-xs font-bold text-neutral-500">회복은 최대 생명까지만!</p>
         </>}
 
-        {currentPage === 4 && <>
-          <p className={caption}>멈추면 2공 하나!</p>
-          <div className="w-[200px] h-[176px] border-[7px] border-black bg-[#F2F2F2] flex flex-col justify-around items-center py-2" role="img" aria-label="기본으로 2공 하나를 보충하고, 합칠 쌍이 없으면 2공을 하나 더 보충합니다">
-            <div className="flex gap-7 items-center"><Ball value={8} controlled size={46} /><Ball value={2} size={38} /></div>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-[#24A85C]">+1?</span>
-              <span className="border-2 border-dashed border-neutral-400 rounded-full p-1"><Ball value={2} size={34} /></span>
-            </div>
-          </div>
-          <p className={note}>합칠 쌍이 없으면 하나 더.<br />생명은 턴당 1개만 써요.</p>
-        </>}
-
-        {currentPage === 5 && <>
-          <p className={caption}>생명이 0이어도…</p>
-          <div className="flex flex-col items-center gap-5" role="img" aria-label="생명이 0이어도 마지막 한 번의 샷을 할 수 있습니다">
-            <Lives active={0} total={3} />
-            <span className="text-3xl text-neutral-400" aria-hidden="true">↓</span>
-            <div className="flex items-center gap-4"><Ball value={32} controlled size={60} /><span className="text-2xl font-black">한 번 더!</span></div>
-          </div>
-          <p className={note}>못 합치면 게임 끝!</p>
-        </>}
       </section>
 
       <nav aria-label="게임 설명 페이지" className="flex items-center justify-between mt-4">

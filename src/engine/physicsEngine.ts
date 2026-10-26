@@ -55,7 +55,7 @@ export class PhysicsEngine {
           if (!ball.trail) ball.trail = [];
           if (ball.isMoving) {
             ball.trail.unshift({ x: ball.x, y: ball.y });
-            if (ball.trail.length > 20) ball.trail.pop();
+            if (ball.trail.length > 36) ball.trail.pop();
           } else if (ball.trail.length > 0) {
             ball.trail.pop();
           }
