@@ -312,7 +312,6 @@ export class GameEngine {
           );
 
           this.balls = mergeResult.updatedBalls;
-          this.particles.push(...mergeResult.particles);
 
           if (mergeResult.wasBlackNumber) {
             this.turnBlackMergesCount += 1;
@@ -393,15 +392,11 @@ export class GameEngine {
       return;
     }
 
-    // Replenishment: If no mergeable pairs exist, spawn 2 balls of value 2!
-    // Otherwise, spawn 1 ball of value 2.
+    // Add one value-2 ball per turn so a new pair never creates extra balls.
     if (turnResult.shouldSpawnBall) {
-      const spawnCount = turnResult.spawnCount;
-      for (let s = 0; s < spawnCount; s++) {
-        const newBall = spawnEngine.spawnReplenishmentBall(this.balls, 2);
-        if (newBall) {
-          this.balls.push(newBall);
-        }
+      const newBall = spawnEngine.spawnReplenishmentBall(this.balls, 2);
+      if (newBall) {
+        this.balls.push(newBall);
       }
       computeDynamicRadii(this.balls);
     }

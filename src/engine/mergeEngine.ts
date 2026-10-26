@@ -1,6 +1,5 @@
-import { Ball, Particle } from '../types/game';
+import { Ball } from '../types/game';
 import { GAME_CONFIG } from '../config/gameConfig';
-import { getBallColor } from '../config/ballColors';
 import { clamp, computeDynamicRadii } from '../utils/math';
 
 export interface MergeResult {
@@ -8,7 +7,6 @@ export interface MergeResult {
   newBall: Ball;
   scoreGained: number;
   wasBlackNumber: boolean;
-  particles: Particle[];
 }
 
 export class MergeEngine {
@@ -65,7 +63,7 @@ export class MergeEngine {
       isMoving: Math.abs(mergedVx) > 0.1 || Math.abs(mergedVy) > 0.1,
       isMerging: false,
       mergeCooldown: 8,
-      scale: 1.25,
+      scale: 1,
       // Exactly ONE black ball exists: it stays black if it merged!
       isBlackNumber: wasBlackNumber,
     };
@@ -75,35 +73,11 @@ export class MergeEngine {
     // Dynamically scale ball radii: max ball becomes subtly larger, smaller balls subtly smaller
     computeDynamicRadii(updatedBalls);
 
-    // Create particle sparkles (no text)
-    const ballColor = getBallColor(newValue);
-    const particles: Particle[] = [];
-    const particleCount = wasBlackNumber ? 16 : 10;
-
-    for (let i = 0; i < particleCount; i++) {
-      const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5);
-      const speed = 1.5 + Math.random() * 3.0;
-      particles.push({
-        id: `p_${Date.now()}_${i}`,
-        x: mergedX,
-        y: mergedY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        radius: 2 + Math.random() * 2.0,
-        alpha: 1.0,
-        color: wasBlackNumber
-          ? (i % 2 === 0 ? '#FFD700' : '#111111')
-          : (i % 2 === 0 ? ballColor.primary : '#FFFFFF'),
-        life: 20,
-      });
-    }
-
     return {
       updatedBalls,
       newBall,
       scoreGained,
       wasBlackNumber,
-      particles,
     };
   }
 }

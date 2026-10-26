@@ -11,7 +11,6 @@ export interface TurnResult {
   lifeLost: boolean;
   isGameOver: boolean;
   shouldSpawnBall: boolean;
-  spawnCount: number; // 1 or 2
 }
 
 /**
@@ -20,8 +19,7 @@ export interface TurnResult {
  * 2. 실패시 회색으로 바뀌고 모든 생명이 회색이 되면 마지막 기회 1번이 남습니다.
  *    (회색 상태에서 또 실패하면 비로소 Game Over!)
  * 3. 최대 생명은 검은공이 성장할 때마다 1칸 추가.
- * 4. 합쳐질 수 있는 쌍의 공들이 없으면 진행을 위해 2 공이 총 2개 생깁니다.
- *    (쌍이 있으면 매 1회 시행 후 2 공 1개 추가)
+ * 4. 턴이 끝날 때마다 진행을 위해 2 공을 1개 추가합니다.
  */
 export function evaluateTurn(
   currentState: GameState,
@@ -65,17 +63,8 @@ export function evaluateTurn(
     lifeRecovered = true;
   }
 
-  // Check if any mergeable pairs exist among real-time remaining balls
+  // Add only one replenishment ball per turn, including when it creates a pair.
   const ballCount = currentBalls.length;
-  const valueCounts = new Map<number, number>();
-  currentBalls.forEach((b) => {
-    valueCounts.set(b.value, (valueCounts.get(b.value) || 0) + 1);
-  });
-  const hasAnyPair = Array.from(valueCounts.values()).some((count) => count >= 2);
-
-  // If no mergeable pairs exist on board, spawn 2 balls with value 2!
-  // If at least one pair already exists, spawn 1 ball with value 2.
-  const spawnCount = !hasAnyPair ? 2 : 1;
   const shouldSpawnBall = !isGameOver && ballCount < GAME_CONFIG.MAX_BALLS_ON_BOARD;
 
   return {
@@ -88,6 +77,5 @@ export function evaluateTurn(
     lifeLost,
     isGameOver,
     shouldSpawnBall,
-    spawnCount,
   };
 }
