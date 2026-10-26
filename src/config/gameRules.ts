@@ -32,7 +32,9 @@ export function evaluateTurn(
   const maxLifeIncreased = maxBallIncreases > 0;
 
   // Every turn spends one life; each successful merge refunds one life.
-  const lifeAfterTurn = currentState.life - 1 + turnMerges;
+  // Life cannot drop below zero before merge refunds are applied. This lets a
+  // successful merge restore life during the final chance at zero.
+  const lifeAfterTurn = Math.max(0, currentState.life - 1) + turnMerges;
   const isGameOver = currentState.life === 0 && turnMerges === 0;
   const newLife = Math.min(newMaxLife, Math.max(0, lifeAfterTurn));
   const lifeLost = newLife < currentState.life;
