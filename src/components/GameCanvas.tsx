@@ -146,8 +146,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
     };
 
     requestRenderRef.current = requestRender;
+    // Engine updates can add or replace balls between canvas frames (for example,
+    // a replenishment ball may spawn after the cue ball stops). Schedule a frame
+    // for those changes so scale animations get their first frame too.
+    const unsubscribe = gameEngine.subscribe(() => requestRender());
     requestRender();
     return () => {
+      unsubscribe();
       requestRenderRef.current = () => {};
       if (animId !== null) cancelAnimationFrame(animId);
     };
@@ -210,10 +215,11 @@ function drawMotionTrail(ctx: CanvasRenderingContext2D, ball: Ball) {
   ctx.closePath();
 
   const tail = points[count - 1];
+  const color = getBallColor(ball.value);
   const grad = ctx.createLinearGradient(ball.x, ball.y, tail.x, tail.y);
-  grad.addColorStop(0, '#FFFFFF5A');
-  grad.addColorStop(0.5, '#FFFFFF2B');
-  grad.addColorStop(1, '#FFFFFF00');
+  grad.addColorStop(0, `${color.primary}70`);
+  grad.addColorStop(0.5, `${color.primary}38`);
+  grad.addColorStop(1, `${color.primary}00`);
   ctx.fillStyle = grad;
   ctx.fill();
   ctx.restore();
