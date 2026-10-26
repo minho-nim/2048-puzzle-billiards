@@ -12,7 +12,6 @@ export interface Ball {
   mergeCooldown: number;
   scale?: number;
   isBlackNumber?: boolean;
-  trail?: { x: number; y: number }[]; // Motion trail history points
 }
 
 export type GamePhase =

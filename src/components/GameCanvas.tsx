@@ -119,22 +119,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
       const gameState = gameEngine.getState();
       const selectedBallId = gameState.phase === 'aiming' ? gameState.selectedBallId : null;
 
-      // 3. Draw Motion Trails (ribbon behind moving balls, matching screenshot image_9bad0948.png)
-      for (const ball of balls) {
-        drawMotionTrail(ctx, ball);
-      }
-
-      // 4. Draw Aim Trajectory & Ghost Ball
+      // 3. Draw Aim Trajectory & Ghost Ball
       if (aimData) {
         drawAimTrajectory(ctx, aimData, balls);
       }
 
-      // 5. Draw Balls
+      // 4. Draw Balls
       for (const ball of balls) {
         drawBall(ctx, ball, ball.id === selectedBallId);
       }
 
-      // 6. Draw Particles
+      // 5. Draw Particles
       for (const p of particles) {
         drawParticle(ctx, p);
       }
@@ -176,62 +171,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
     </div>
   );
 };
-
-/**
- * Draws the smooth fading ribbon motion trail matching image_9bad0948.png
- */
-function drawMotionTrail(ctx: CanvasRenderingContext2D, ball: Ball) {
-  if (!ball.trail || ball.trail.length < 2) return;
-  const points = [{ x: ball.x, y: ball.y }, ...ball.trail];
-  const count = points.length;
-  if (count < 2) return;
-
-  const color = getBallColor(ball.value);
-  const r = ball.radius;
-
-  ctx.save();
-
-  // Draw wide trailing ribbon polygon
-  const leftEdge: { x: number; y: number }[] = [];
-  const rightEdge: { x: number; y: number }[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const cur = points[i];
-    const prev = points[Math.max(0, i - 1)];
-    const next = points[Math.min(count - 1, i + 1)];
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-
-    const progress = i / (count - 1);
-    const halfWidth = r * (1 - progress * 0.72) * 0.9;
-
-    leftEdge.push({ x: cur.x + nx * halfWidth, y: cur.y + ny * halfWidth });
-    rightEdge.push({ x: cur.x - nx * halfWidth, y: cur.y - ny * halfWidth });
-  }
-
-  ctx.beginPath();
-  ctx.moveTo(leftEdge[0].x, leftEdge[0].y);
-  for (let i = 1; i < leftEdge.length; i++) {
-    ctx.lineTo(leftEdge[i].x, leftEdge[i].y);
-  }
-  for (let i = rightEdge.length - 1; i >= 0; i--) {
-    ctx.lineTo(rightEdge[i].x, rightEdge[i].y);
-  }
-  ctx.closePath();
-
-  const tail = points[count - 1];
-  const grad = ctx.createLinearGradient(ball.x, ball.y, tail.x, tail.y);
-  grad.addColorStop(0, color.primary + '5A'); // ~35% opacity near ball
-  grad.addColorStop(0.5, color.primary + '2B'); // ~17% opacity mid
-  grad.addColorStop(1, color.primary + '00'); // Faded out at tail
-
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.restore();
-}
 
 /**
  * Draws clean 3D billiard balls matching original image_94b6cd2d.png
