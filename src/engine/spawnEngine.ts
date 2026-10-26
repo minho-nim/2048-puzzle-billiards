@@ -98,7 +98,7 @@ export class SpawnEngine {
           isMoving: false,
           isMerging: false,
           mergeCooldown: 0,
-          scale: 0.1, // Smooth appearance animation
+          scale: 1,
           isBlackNumber: false, // All other balls are strictly white number balls
         };
 
@@ -131,7 +131,7 @@ export class SpawnEngine {
           isMoving: false,
           isMerging: false,
           mergeCooldown: 0,
-          scale: 0.1,
+          scale: 1,
           isBlackNumber: false,
         };
 

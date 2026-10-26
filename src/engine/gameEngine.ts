@@ -392,10 +392,11 @@ export class GameEngine {
       return;
     }
 
-    // Add one value-2 ball per turn so a new pair never creates extra balls.
+    // Replenish toward at most two value-2 balls, without creating a third.
     if (turnResult.shouldSpawnBall) {
-      const newBall = spawnEngine.spawnReplenishmentBall(this.balls, 2);
-      if (newBall) {
+      for (let i = 0; i < turnResult.spawnCount; i++) {
+        const newBall = spawnEngine.spawnReplenishmentBall(this.balls, 2);
+        if (!newBall) break;
         this.balls.push(newBall);
       }
       computeDynamicRadii(this.balls);
