@@ -17,6 +17,9 @@ import {
   saveStoredAchievements,
   getStoredStats,
   saveStoredStats,
+  getStoredProgress,
+  saveStoredProgress,
+  StoredGameProgress,
 } from '../utils/storage';
 
 export type StateListener = (state: GameState) => void;
@@ -42,6 +45,7 @@ export class GameEngine {
   private currentCombo: number = 0;
   private turnBlackMergesCount: number = 0;
   private resolveNotBefore: number = 0;
+  private lastCheckpointTime: number = 0;
 
   constructor() {
     const record = getStoredRecord();
@@ -68,7 +72,9 @@ export class GameEngine {
       soundEnabled: settings.soundEnabled,
     };
 
-    this.initGame();
+    const progress = getStoredProgress();
+    if (progress) this.restoreProgress(progress);
+    else this.initGame();
   }
 
   public initGame() {
@@ -130,6 +136,48 @@ export class GameEngine {
       balls: this.balls,
     };
     this.stateListeners.forEach((l) => l(snapshot));
+    this.checkpoint();
+  }
+
+  public checkpoint() {
+    const now = performance.now();
+    saveStoredProgress({
+      version: 1,
+      state: {
+        ...this.state,
+        balls: this.balls,
+        phase: this.state.phase === 'aiming' ? 'ready' : this.state.phase,
+        selectedBallId: null,
+      },
+      turnScoreGained: this.turnScoreGained,
+      currentCombo: this.currentCombo,
+      turnBlackMergesCount: this.turnBlackMergesCount,
+      resolveDelay: Math.max(0, this.resolveNotBefore - now),
+    });
+    this.lastCheckpointTime = now;
+  }
+
+  private restoreProgress(progress: StoredGameProgress) {
+    this.balls = progress.state.balls.map((ball) => ({
+      ...ball, trail: undefined, pulseAge: undefined, scale: 1, opacity: 1,
+    }));
+    this.state = {
+      ...progress.state,
+      balls: this.balls,
+      phase: progress.state.phase === 'aiming' ? 'ready'
+        : progress.state.phase === 'resolving' ? 'simulating' : progress.state.phase,
+      selectedBallId: null,
+      lifeRevision: 0,
+      lifeChangedSlots: [],
+      turnScoreGained: 0,
+      record: Math.max(progress.state.record, getStoredRecord()),
+      soundEnabled: getStoredSettings().soundEnabled,
+    };
+    this.turnScoreGained = progress.turnScoreGained;
+    this.currentCombo = progress.currentCombo;
+    this.turnBlackMergesCount = progress.turnBlackMergesCount;
+    this.resolveNotBefore = performance.now() + Math.min(260, progress.resolveDelay);
+    this.accumulator = 0;
   }
 
   public getBalls(): Ball[] {
@@ -218,6 +266,7 @@ export class GameEngine {
       this.selectedBall.vx = launchVx;
       this.selectedBall.vy = launchVy;
       this.selectedBall.isMoving = true;
+      this.selectedBall.hasBouncedThisShot = false;
 
       soundManager.playCueShot(this.aimData.power);
 
@@ -289,6 +338,9 @@ export class GameEngine {
     }
 
     this.updateVisualEffects(elapsed / 1000);
+    if (this.state.phase === 'simulating' && currentTime - this.lastCheckpointTime >= 250) {
+      this.checkpoint();
+    }
 
     this.animationFrameId = requestAnimationFrame(this.loop);
   }

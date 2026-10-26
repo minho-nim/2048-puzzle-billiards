@@ -38,11 +38,32 @@ export default function App() {
     });
 
     return () => {
+      gameEngine.checkpoint();
       gameEngine.stop();
       unsubscribeState();
       unsubscribeAchievement();
     };
   }, []);
+
+  useEffect(() => {
+    const checkpointAndStop = () => {
+      gameEngine.checkpoint();
+      gameEngine.stop();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) checkpointAndStop();
+      else if (!isResetOpen) gameEngine.start();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', checkpointAndStop);
+    window.addEventListener('pageshow', onVisibilityChange);
+    onVisibilityChange();
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', checkpointAndStop);
+      window.removeEventListener('pageshow', onVisibilityChange);
+    };
+  }, [isResetOpen]);
 
   const handleRestart = () => {
     gameEngine.initGame();

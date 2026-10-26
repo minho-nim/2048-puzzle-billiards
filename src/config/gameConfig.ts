@@ -25,9 +25,10 @@ export const GAME_CONFIG = {
   // Launch and aim controls
   MAX_DRAG_DISTANCE: 180,
   MIN_DRAG_DISTANCE: 6,
-  MAX_LAUNCH_SPEED: 26,
+  // Centered value-2 cue: five wall bounces, then about 20% of the next crossing.
+  MAX_LAUNCH_SPEED: 86.56,
   DRAG_SENSITIVITY: 0.16,
-  CONTROL_MODE: 'slingshot' as 'slingshot' | 'direct',
+  CONTROL_MODE: 'direct' as 'slingshot' | 'direct',
 
   // Rules: Starts with 1 blue ball. If it turns gray, 1 last chance remains!
   INITIAL_LIFE: 1,

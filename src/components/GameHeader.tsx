@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Award, Home, Volume2, VolumeX } from 'lucide-react';
+import { Crown, Award, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 
 interface GameHeaderProps {
   onOpenHelp: () => void;
@@ -55,14 +55,14 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
 
       {/* Right button group */}
       <div className="flex items-center gap-2.5">
-        {/* Home button */}
+        {/* Restart button */}
         <button
           onClick={onHomeClick}
           className="w-10 h-10 sm:w-11 sm:h-11 bg-white border-[2.5px] border-black rounded-[4px] flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition-transform shadow-xs cursor-pointer"
-          title="현재 게임 진행 초기화"
-          aria-label="홈 · 진행 초기화"
+          title="현재 게임 다시 시작"
+          aria-label="다시 시작"
         >
-          <Home className="w-6 h-6 text-black fill-black" strokeWidth={1.5} />
+          <RotateCcw className="w-6 h-6 text-black" strokeWidth={2.5} />
         </button>
 
         {/* Speaker / Sound button */}

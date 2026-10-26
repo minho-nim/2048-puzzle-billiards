@@ -14,6 +14,7 @@ export interface Ball {
   pulseAge?: number;
   opacity?: number;
   isBlackNumber?: boolean;
+  hasBouncedThisShot?: boolean;
   trail?: { x: number; y: number }[];
 }
 

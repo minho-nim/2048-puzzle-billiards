@@ -67,6 +67,8 @@ export class MergeEngine {
       pulseAge: 0,
       // Exactly ONE black ball exists: it stays black if it merged!
       isBlackNumber: wasBlackNumber,
+      hasBouncedThisShot: Boolean(ball1.isBlackNumber ? ball1.hasBouncedThisShot
+        : ball2.isBlackNumber ? ball2.hasBouncedThisShot : false),
     };
 
     const updatedBalls = [...remainingBalls, newBall];

@@ -72,17 +72,17 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
       <section aria-label={titles[currentPage]} className="border-[10px] border-black bg-neutral-50 h-[340px] sm:h-[370px] px-2 py-4 flex flex-col items-center justify-between">
         {currentPage === 0 && <>
-          <p className={caption}>검은 글씨 공을<br />당겨서 조준!</p>
-          <div className="relative w-[210px] h-[170px]" role="img" aria-label="검은 글씨 공을 왼쪽 아래로 당기면 오른쪽 위를 조준합니다">
+          <p className={caption}>검은 글씨 공을<br />드래그해 조준!</p>
+          <div className="relative w-[210px] h-[170px]" role="img" aria-label="손을 오른쪽 아래로 움직이면 공도 오른쪽 아래를 향합니다">
             <svg viewBox="0 0 210 170" className="absolute inset-0 w-full h-full" aria-hidden="true">
-              <path d="M105 75 L170 20" stroke="#38B6FF" strokeWidth="3" strokeDasharray="6 5" fill="none" />
-              <path d="M159 20 L170 20 L169 32" stroke="#38B6FF" strokeWidth="3" fill="none" />
-              <path d="M90 93 L55 130 M55 119 L55 130 L66 129" stroke="#D57800" strokeWidth="3" fill="none" />
+              <path d="M105 75 L178 138" stroke="#38B6FF" strokeWidth="3" strokeDasharray="6 5" fill="none" />
+              <path d="M166 137 L178 138 L177 126" stroke="#38B6FF" strokeWidth="3" fill="none" />
+              <path d="M104 105 L138 135 M126 134 L138 135 L137 123" stroke="#D57800" strokeWidth="3" fill="none" />
             </svg>
             <div className="absolute left-[76px] top-[46px]"><Ball value={32} controlled size={58} /></div>
-            <Hand className="absolute left-[34px] top-[127px] w-8 h-8 text-black fill-white" />
+            <Hand className="absolute left-[148px] top-[137px] w-8 h-8 text-black fill-white" />
           </div>
-          <p className={note}>당긴 반대 방향으로 나가요.</p>
+          <p className={note}>손을 움직인 방향으로 나가요.</p>
         </>}
 
         {currentPage === 1 && <>

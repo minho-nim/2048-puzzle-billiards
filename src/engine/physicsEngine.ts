@@ -126,6 +126,7 @@ export class PhysicsEngine {
           }
         }
 
+        if (hitWall && b.isBlackNumber) b.hasBouncedThisShot = true;
         if (hitWall && speed > 0.5) {
           collisions.push({
             type: 'wall',
@@ -178,15 +179,33 @@ export class PhysicsEngine {
             // Normal elastic collision impulse
             if (velAlongNormal < 0) {
               const restitution = GAME_CONFIG.RESTITUTION;
-              const impulseScalar = (-(1 + restitution) * velAlongNormal) / (1 / b1.mass + 1 / b2.mass);
+              const cue = b1.isBlackNumber ? b1 : b2.isBlackNumber ? b2 : null;
+              const target = cue === b1 ? b2 : b1;
+              const cueNx = cue === b1 ? nx : -nx;
+              const cueNy = cue === b1 ? ny : -ny;
+              const cueSpeed = cue ? Math.hypot(cue.vx, cue.vy) : 0;
+              const cueNormalSpeed = cue ? dot(cue.vx, cue.vy, cueNx, cueNy) : 0;
+              const targetStopped = !target.isMoving && Math.hypot(target.vx, target.vy) < GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
+              const directHeadOn = cue && !cue.hasBouncedThisShot && targetStopped
+                && cueSpeed > 0 && cueNormalSpeed / cueSpeed >= 0.999;
+              if (cue && directHeadOn) {
+                // Only a direct, centered first hit transfers the cue's forward
+                // motion. Wall-first and glancing collisions use normal physics.
+                target.vx += cueNx * cueNormalSpeed * restitution;
+                target.vy += cueNy * cueNormalSpeed * restitution;
+                cue.vx = 0;
+                cue.vy = 0;
+              } else {
+                const impulseScalar = (-(1 + restitution) * velAlongNormal) / (1 / b1.mass + 1 / b2.mass);
 
-              const ix = impulseScalar * nx;
-              const iy = impulseScalar * ny;
+                const ix = impulseScalar * nx;
+                const iy = impulseScalar * ny;
 
-              b1.vx -= (ix / b1.mass);
-              b1.vy -= (iy / b1.mass);
-              b2.vx += (ix / b2.mass);
-              b2.vy += (iy / b2.mass);
+                b1.vx -= (ix / b1.mass);
+                b1.vy -= (iy / b1.mass);
+                b2.vx += (ix / b2.mass);
+                b2.vy += (iy / b2.mass);
+              }
 
               b1.isMoving = (b1.vx * b1.vx + b1.vy * b1.vy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
               b2.isMoving = (b2.vx * b2.vx + b2.vy * b2.vy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD;

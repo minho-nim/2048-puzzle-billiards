@@ -21,7 +21,7 @@ export class AimEngine {
    * @param ball The ball being aimed
    * @param dragVector {dx, dy} drag offset from ball position
    * @param balls All other balls currently on the board
-   * @param mode 'slingshot' (default: pull back to shoot forward) or 'direct'
+   * @param mode The current game uses direct aiming, in the finger's direction.
    */
   public calculateAim(
     ball: Ball,
