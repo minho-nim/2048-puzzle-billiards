@@ -49,6 +49,19 @@ export class PhysicsEngine {
     const frictionFactor = Math.pow(GAME_CONFIG.FRICTION, 1 / substeps);
 
     for (let s = 0; s < substeps; s++) {
+      if (s === 0) {
+        for (const ball of balls) {
+          if (!ball.isBlackNumber) continue;
+          if (!ball.trail) ball.trail = [];
+          if (ball.isMoving) {
+            ball.trail.unshift({ x: ball.x, y: ball.y });
+            if (ball.trail.length > 20) ball.trail.pop();
+          } else if (ball.trail.length > 0) {
+            ball.trail.pop();
+          }
+        }
+      }
+
       // 1. Position update & friction
       for (let i = 0; i < balls.length; i++) {
         const b = balls[i];

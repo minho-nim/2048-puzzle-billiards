@@ -12,6 +12,7 @@ export interface Ball {
   mergeCooldown: number;
   scale?: number;
   isBlackNumber?: boolean;
+  trail?: { x: number; y: number }[];
 }
 
 export type GamePhase =

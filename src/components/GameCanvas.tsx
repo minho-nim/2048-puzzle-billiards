@@ -119,6 +119,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
       const gameState = gameEngine.getState();
       const selectedBallId = gameState.phase === 'aiming' ? gameState.selectedBallId : null;
 
+      // Only the manually controlled black ball leaves a trail.
+      for (const ball of balls) {
+        if (ball.isBlackNumber && ball.isMoving) drawMotionTrail(ctx, ball);
+      }
+
       // 3. Draw Aim Trajectory & Ghost Ball
       if (aimData) {
         drawAimTrajectory(ctx, aimData, balls);
@@ -172,6 +177,48 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
   );
 };
 
+function drawMotionTrail(ctx: CanvasRenderingContext2D, ball: Ball) {
+  if (!ball.trail || ball.trail.length < 2) return;
+  const points = [{ x: ball.x, y: ball.y }, ...ball.trail];
+  const count = points.length;
+  const r = ball.radius;
+
+  ctx.save();
+  const leftEdge: { x: number; y: number }[] = [];
+  const rightEdge: { x: number; y: number }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const cur = points[i];
+    const prev = points[Math.max(0, i - 1)];
+    const next = points[Math.min(count - 1, i + 1)];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const progress = i / (count - 1);
+    const halfWidth = r * (1 - progress * 0.72) * 0.9;
+
+    leftEdge.push({ x: cur.x + nx * halfWidth, y: cur.y + ny * halfWidth });
+    rightEdge.push({ x: cur.x - nx * halfWidth, y: cur.y - ny * halfWidth });
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(leftEdge[0].x, leftEdge[0].y);
+  for (let i = 1; i < leftEdge.length; i++) ctx.lineTo(leftEdge[i].x, leftEdge[i].y);
+  for (let i = rightEdge.length - 1; i >= 0; i--) ctx.lineTo(rightEdge[i].x, rightEdge[i].y);
+  ctx.closePath();
+
+  const tail = points[count - 1];
+  const grad = ctx.createLinearGradient(ball.x, ball.y, tail.x, tail.y);
+  grad.addColorStop(0, '#FFFFFF5A');
+  grad.addColorStop(0.5, '#FFFFFF2B');
+  grad.addColorStop(1, '#FFFFFF00');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+}
+
 /**
  * Draws clean 3D billiard balls matching original image_94b6cd2d.png
  */
@@ -194,8 +241,8 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
   }
 
   // Soft subtle drop shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.20)';
-  ctx.shadowBlur = 6;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+  ctx.shadowBlur = 4;
   ctx.shadowOffsetY = 3;
   ctx.shadowOffsetX = 1;
 
@@ -228,13 +275,13 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
   ctx.ellipse(
     x + r * 0.08,
     y - r * 0.44,
-    r * 0.38,
-    r * 0.18,
+    r * 0.32,
+    r * 0.14,
     0.22,
     0,
     Math.PI * 2
   );
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
   ctx.fill();
 
   // Draw number text

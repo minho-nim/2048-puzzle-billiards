@@ -436,7 +436,7 @@ export class GameEngine {
           const remainingScale = 1.0 - b.scale;
           b.scale = remainingScale < 0.001
             ? 1.0
-            : 1.0 - remainingScale * Math.exp(-dt * 8);
+            : 1.0 - remainingScale * Math.exp(-dt * 6);
         }
       }
     }
