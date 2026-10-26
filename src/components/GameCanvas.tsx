@@ -141,7 +141,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
 
       ctx.restore();
 
-      const hasAnimatedBall = balls.some((ball) => ball.isMoving || (ball.scale !== undefined && ball.scale !== 1) || (ball.opacity !== undefined && ball.opacity !== 1));
+      const hasAnimatedBall = balls.some((ball) => ball.isMoving || ball.pulseAge !== undefined || (ball.scale !== undefined && ball.scale !== 1) || (ball.opacity !== undefined && ball.opacity !== 1));
       if (hasAnimatedBall || particles.length > 0 || aimData !== null) requestRender();
     };
 

@@ -62,6 +62,15 @@ for (const count of [1, 2, 3, 4, 5, 8]) {
   assert.equal(engine.state.life, 3 + count, 'heal immediately on each merge');
   assert.equal(engine.state.phase, 'simulating', 'show recovery before replenishment');
   assert.equal(engine.balls.length, balls.length - count, 'no spawn during recovery');
+  const mergedBall = engine.balls.find((item) => item.pulseAge === 0);
+  assert.ok(mergedBall, 'merged balls start a visual pulse');
+  const physicalRadius = mergedBall.radius;
+  engine.updateVisualEffects(0.13);
+  assert.ok(mergedBall.scale > 1.1, 'merge pulse grows above normal size');
+  assert.equal(mergedBall.radius, physicalRadius, 'pulse does not change collision radius');
+  engine.updateVisualEffects(0.13);
+  assert.equal(mergedBall.scale, 1, 'pulse returns exactly to normal size');
+  assert.equal(mergedBall.pulseAge, undefined);
   engine.resolveTurn();
   assert.equal(engine.state.life, 3 + count - 1, `${count} merges, then exactly one debit`);
 }
@@ -90,21 +99,34 @@ for (const full of [false, true]) {
   assert.equal(engine.state.life, full ? 6 : 4, 'merge +1 and growth +1 happen immediately');
   assert.ok(engine.state.lifeChangedSlots.includes(5), 'new capacity slot animates with recovery');
   engine.resolveTurn();
-  assert.equal(engine.state.life, full ? 6 : 3, 'cue growth has net +1 after spawn');
+  assert.equal(engine.state.life, full ? 5 : 3, 'spawn deducts one visible life after capped recovery');
+  if (full) assert.deepEqual(engine.state.lifeChangedSlots, [5], 'the spent capacity slot turns gray');
 }
 
 {
   const engine = engineWith([ball(2, 130, 130), ball(2, 180, 130), ball(64, 440, 440, true)], 5, 5);
   engine.updatePhysics(1 / 120);
+  assert.equal(engine.state.life, 5, 'recovery is capped immediately at full life');
   engine.resolveTurn();
-  assert.equal(engine.state.life, 5, 'a merge at full life must offset the later debit');
+  assert.equal(engine.state.life, 4, 'spawn must deduct one life even after a merge at full life');
+  assert.deepEqual(engine.state.lifeChangedSlots, [4]);
   assert.equal(engine.state.maxLife, 5, 'ordinary merges do not add capacity');
+}
+{
+  const engine = engineWith([ball(2, 130, 130, true), ball(2, 180, 130)], 1, 1);
+  engine.updatePhysics(1 / 120);
+  assert.equal(engine.state.life, 2, 'first cue merge visibly fills two life slots');
+  engine.resolveTurn();
+  assert.equal(engine.state.life, 1, 'first replenishment must visibly spend one life');
+  assert.equal(engine.state.maxLife, 2);
+  assert.deepEqual(engine.state.lifeChangedSlots, [1]);
 }
 {
   const engine = engineWith([ball(64, 440, 440, true)], 3, 5);
   engine.resolveTurn();
   assert.equal(engine.balls.length, 3, 'spawn two 2s when the first leaves no pair');
   assert.equal(engine.state.life, 2, 'two spawned balls still cost only one life');
+  assert.equal(engine.balls.filter((item) => item.pulseAge === 0).length, 2, 'each spawned ball pulses');
   assert.deepEqual(engine.state.lifeChangedSlots, [2], 'only the spent slot pulses');
 }
 {

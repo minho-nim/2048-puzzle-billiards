@@ -24,16 +24,14 @@ export function evaluateTurn(
   currentState: GameState,
   currentBalls: Ball[],
   turnMerges: number,
-  turnScoreGained: number,
-  lifeOverflow: number = 0
+  turnScoreGained: number
 ): TurnResult {
-  // Merge rewards have already been applied. Spend exactly one life when the
-  // replenishment is created. Overflow preserves rewards earned at full life
-  // until this debit, so a successful ordinary merge has a net cost of zero.
+  // Merge rewards have already been applied up to the current capacity.
+  // Replenishment always spends one displayed life, including at full life.
   const newMaxLife = currentState.maxLife;
   const maxLifeIncreased = false;
-  const isGameOver = currentState.life + lifeOverflow === 0;
-  const newLife = Math.min(newMaxLife, Math.max(0, currentState.life + lifeOverflow - 1));
+  const isGameOver = currentState.life === 0;
+  const newLife = Math.max(0, currentState.life - 1);
   const lifeLost = !isGameOver;
   const lifeRecovered = false;
   const counts = new Map<number, number>();

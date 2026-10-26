@@ -41,7 +41,6 @@ export class GameEngine {
   private turnScoreGained: number = 0;
   private currentCombo: number = 0;
   private turnBlackMergesCount: number = 0;
-  private turnLifeOverflow: number = 0;
   private resolveNotBefore: number = 0;
 
   constructor() {
@@ -82,7 +81,6 @@ export class GameEngine {
     this.currentCombo = 0;
     this.turnScoreGained = 0;
     this.turnBlackMergesCount = 0;
-    this.turnLifeOverflow = 0;
     this.resolveNotBefore = 0;
 
     const record = getStoredRecord();
@@ -228,7 +226,6 @@ export class GameEngine {
       this.state.turnMerges = 0;
       this.state.turnBlackMerges = 0;
       this.turnBlackMergesCount = 0;
-      this.turnLifeOverflow = 0;
       this.resolveNotBefore = 0;
       this.turnScoreGained = 0;
       this.state.turnScoreGained = 0;
@@ -336,8 +333,7 @@ export class GameEngine {
           // slot and another current life, in the same notification/animation.
           const growthBonus = mergeResult.wasBlackNumber ? 1 : 0;
           const newMaxLife = this.state.maxLife + growthBonus;
-          const totalLife = this.state.life + this.turnLifeOverflow + 1 + growthBonus;
-          this.turnLifeOverflow = Math.max(0, totalLife - newMaxLife);
+          const totalLife = this.state.life + 1 + growthBonus;
           this.applyLifeChange(Math.min(newMaxLife, totalLife), newMaxLife);
           this.resolveNotBefore = performance.now() + 260;
 
@@ -391,8 +387,7 @@ export class GameEngine {
       this.state,
       this.balls,
       this.state.turnMerges,
-      this.turnScoreGained,
-      this.turnLifeOverflow
+      this.turnScoreGained
     );
 
     if (turnResult.isGameOver) {
@@ -427,7 +422,6 @@ export class GameEngine {
       this.applyLifeChange(turnResult.newLife, turnResult.newMaxLife);
       soundManager.playLifeLost();
     }
-    this.turnLifeOverflow = 0;
 
     this.state.balls = [...this.balls];
     this.state.phase = 'ready';
@@ -443,8 +437,8 @@ export class GameEngine {
         changed.add(index);
       }
     }
-    // A reward at full life still pulses the credited slot. Its overflow is
-    // kept until the replenishment debit rather than silently discarded.
+    // A recovery at full life still pulses the credited slot. Replenishment
+    // always spends one of the currently displayed lives afterwards.
     if (changed.size === 0) changed.add(Math.max(0, Math.min(life, maxLife) - 1));
     this.state.life = life;
     this.state.maxLife = maxLife;
@@ -476,7 +470,15 @@ export class GameEngine {
       if (b.opacity !== undefined && b.opacity < 1) {
         b.opacity = Math.min(1, b.opacity + dt * 10);
       }
-      if (b.scale !== undefined && b.scale !== 1.0) {
+      if (b.pulseAge !== undefined) {
+        b.pulseAge += dt;
+        const progress = Math.min(1, b.pulseAge / 0.26);
+        b.scale = 1 + Math.sin(progress * Math.PI) * 0.12;
+        if (progress === 1) {
+          b.scale = 1;
+          delete b.pulseAge;
+        }
+      } else if (b.scale !== undefined && b.scale !== 1.0) {
         if (b.scale > 1.0) {
           b.scale = Math.max(1.0, b.scale - dt * 2.5);
         } else if (b.scale < 1.0) {

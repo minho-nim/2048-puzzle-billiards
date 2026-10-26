@@ -11,6 +11,7 @@ export interface Ball {
   isMerging: boolean;
   mergeCooldown: number;
   scale?: number;
+  pulseAge?: number;
   opacity?: number;
   isBlackNumber?: boolean;
   trail?: { x: number; y: number }[];

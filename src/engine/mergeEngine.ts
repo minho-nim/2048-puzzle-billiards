@@ -63,7 +63,8 @@ export class MergeEngine {
       isMoving: Math.abs(mergedVx) > 0.1 || Math.abs(mergedVy) > 0.1,
       isMerging: false,
       mergeCooldown: 8,
-      scale: 0.94,
+      scale: 1,
+      pulseAge: 0,
       // Exactly ONE black ball exists: it stays black if it merged!
       isBlackNumber: wasBlackNumber,
     };
