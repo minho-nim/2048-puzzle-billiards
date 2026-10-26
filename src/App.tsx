@@ -73,7 +73,9 @@ export default function App() {
         <div className="w-full flex flex-col items-start">
           {/* Life Indicator directly above board */}
           <div className="mb-1.5 px-0.5">
-            <LifeIndicator life={gameState.life} maxLife={gameState.maxLife} maxBallValue={gameState.maxBallValue} />
+            <LifeIndicator life={gameState.life} maxLife={gameState.maxLife}
+              maxBallValue={gameState.balls.find((ball) => ball.isBlackNumber)?.value ?? 2}
+              revision={gameState.lifeRevision} changedSlots={gameState.lifeChangedSlots} />
           </div>
 
           {/* Main 2D Billiard Board */}

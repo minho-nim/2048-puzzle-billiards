@@ -41,7 +41,8 @@ export class GameEngine {
   private turnScoreGained: number = 0;
   private currentCombo: number = 0;
   private turnBlackMergesCount: number = 0;
-  private turnMaxBallIncreases: number = 0;
+  private turnLifeOverflow: number = 0;
+  private resolveNotBefore: number = 0;
 
   constructor() {
     const record = getStoredRecord();
@@ -56,6 +57,8 @@ export class GameEngine {
       record,
       life: GAME_CONFIG.INITIAL_LIFE,
       maxLife: GAME_CONFIG.INITIAL_MAX_LIFE,
+      lifeRevision: 0,
+      lifeChangedSlots: [],
       phase: 'ready',
       selectedBallId: null,
       shots: 0,
@@ -79,7 +82,8 @@ export class GameEngine {
     this.currentCombo = 0;
     this.turnScoreGained = 0;
     this.turnBlackMergesCount = 0;
-    this.turnMaxBallIncreases = 0;
+    this.turnLifeOverflow = 0;
+    this.resolveNotBefore = 0;
 
     const record = getStoredRecord();
 
@@ -91,6 +95,8 @@ export class GameEngine {
       record,
       life: GAME_CONFIG.INITIAL_LIFE,
       maxLife: GAME_CONFIG.INITIAL_MAX_LIFE,
+      lifeRevision: 0,
+      lifeChangedSlots: [],
       phase: 'ready',
       selectedBallId: null,
       shots: 0,
@@ -222,7 +228,8 @@ export class GameEngine {
       this.state.turnMerges = 0;
       this.state.turnBlackMerges = 0;
       this.turnBlackMergesCount = 0;
-      this.turnMaxBallIncreases = 0;
+      this.turnLifeOverflow = 0;
+      this.resolveNotBefore = 0;
       this.turnScoreGained = 0;
       this.state.turnScoreGained = 0;
       this.currentCombo = 0;
@@ -273,7 +280,7 @@ export class GameEngine {
   private loop(currentTime: number) {
     const elapsed = Math.min(100, currentTime - this.lastTime);
     this.lastTime = currentTime;
-    this.accumulator += elapsed / 1000;
+    this.accumulator += elapsed / 1000 * GAME_CONFIG.SIMULATION_SPEED;
 
     const fixedDt = GAME_CONFIG.FIXED_DT;
     let updates = 0;
@@ -304,6 +311,7 @@ export class GameEngine {
 
       // Handle merges
       if (stepResult.merges.length > 0) {
+        this.state.lifeChangedSlots = [];
         for (const candidate of stepResult.merges) {
           const b1Exists = this.balls.some((b) => b.id === candidate.ball1.id);
           const b2Exists = this.balls.some((b) => b.id === candidate.ball2.id);
@@ -324,6 +332,15 @@ export class GameEngine {
             this.state.turnBlackMerges += 1;
           }
 
+          // Recover immediately on contact. Cue growth adds both a capacity
+          // slot and another current life, in the same notification/animation.
+          const growthBonus = mergeResult.wasBlackNumber ? 1 : 0;
+          const newMaxLife = this.state.maxLife + growthBonus;
+          const totalLife = this.state.life + this.turnLifeOverflow + 1 + growthBonus;
+          this.turnLifeOverflow = Math.max(0, totalLife - newMaxLife);
+          this.applyLifeChange(Math.min(newMaxLife, totalLife), newMaxLife);
+          this.resolveNotBefore = performance.now() + 260;
+
           // Audio
           soundManager.playMerge(mergeResult.newBall.value, this.currentCombo);
 
@@ -339,10 +356,6 @@ export class GameEngine {
             this.state.merges,
             this.state.maxBallValue
           );
-
-          if (scoreUpdate.newMaxBall > this.state.maxBallValue) {
-            this.turnMaxBallIncreases += 1;
-          }
 
           this.state.score = scoreUpdate.newScore;
           this.state.record = scoreUpdate.newRecord;
@@ -363,7 +376,8 @@ export class GameEngine {
       }
 
       // If all balls have stopped, end the turn
-      if (stepResult.isAllStopped) {
+      if (stepResult.isAllStopped && this.balls.every((ball) => !ball.isMoving)
+        && performance.now() >= this.resolveNotBefore) {
         this.resolveTurn();
       }
     }
@@ -378,15 +392,8 @@ export class GameEngine {
       this.balls,
       this.state.turnMerges,
       this.turnScoreGained,
-      this.turnMaxBallIncreases
+      this.turnLifeOverflow
     );
-
-    this.state.life = turnResult.newLife;
-    this.state.maxLife = turnResult.newMaxLife;
-
-    if (turnResult.lifeLost) {
-      soundManager.playLifeLost();
-    }
 
     if (turnResult.isGameOver) {
       this.state.phase = 'gameover';
@@ -403,20 +410,46 @@ export class GameEngine {
       return;
     }
 
-    // Replenish toward at most two value-2 balls, without creating a third.
+    // Replenish one 2, and a second only if no pair exists after the first.
+    let spawnedCount = 0;
     if (turnResult.shouldSpawnBall) {
       for (let i = 0; i < turnResult.spawnCount; i++) {
         const newBall = spawnEngine.spawnReplenishmentBall(this.balls, 2);
         if (!newBall) break;
         this.balls.push(newBall);
+        spawnedCount += 1;
       }
       computeDynamicRadii(this.balls);
     }
+
+    if (spawnedCount > 0) {
+      this.state.lifeChangedSlots = [];
+      this.applyLifeChange(turnResult.newLife, turnResult.newMaxLife);
+      soundManager.playLifeLost();
+    }
+    this.turnLifeOverflow = 0;
 
     this.state.balls = [...this.balls];
     this.state.phase = 'ready';
     this.state.selectedBallId = null;
     this.notifyState();
+  }
+
+  private applyLifeChange(life: number, maxLife: number) {
+    const changed = new Set(this.state.lifeChangedSlots);
+    for (let index = 0; index < Math.max(this.state.maxLife, maxLife); index++) {
+      if ((index < this.state.life) !== (index < life)
+        || (index < this.state.maxLife) !== (index < maxLife)) {
+        changed.add(index);
+      }
+    }
+    // A reward at full life still pulses the credited slot. Its overflow is
+    // kept until the replenishment debit rather than silently discarded.
+    if (changed.size === 0) changed.add(Math.max(0, Math.min(life, maxLife) - 1));
+    this.state.life = life;
+    this.state.maxLife = maxLife;
+    this.state.lifeChangedSlots = [...changed];
+    this.state.lifeRevision += 1;
   }
 
   private unlockAchievements(achIds: string[]) {

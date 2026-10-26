@@ -75,7 +75,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               <div className="text-[16px] font-black text-[#E87A00]">
-                ...당구공처럼 튕기며 발사됩니다.
+                ...당긴 길이와 관계없이 같은 세기로 발사됩니다.
               </div>
             </div>
           )}
@@ -154,7 +154,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               {/* Row 1 */}
               <div>
                 <div className="text-[15px] font-black text-[#E87A00]">
-                  공이 보충될 때마다...
+                  공이 멈추고 2공이 보충되면...
                 </div>
                 <div className="text-[15px] font-black text-[#D93845] mb-1">
                   생명 1개를 사용합니다.
@@ -174,7 +174,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   합체에 성공할 때마다...
                 </div>
                 <div className="text-[15px] font-black text-[#24A85C] mb-1">
-                  합체 1회마다 생명 1개를 회복합니다.
+                  합체 순간 생명 1개를 회복합니다.
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <div className="w-6 h-6 rounded-full bg-radial from-[#FF7A8F] via-[#F22D48] to-[#BA0E24] shadow-xs" />
@@ -188,10 +188,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               {/* Row 3 */}
               <div>
                 <div className="text-[15px] font-black text-[#E87A00]">
-                  최고 공 숫자가 새 기록을 만들면...
+                  검은 글씨 공이 합쳐져 커지면...
                 </div>
                 <div className="text-[15px] font-black text-[#6366F1] mb-1">
-                  최대 생명이 1개 증가합니다.
+                  최대·현재 생명이 추가로 1 증가합니다.
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <div className="w-6 h-6 rounded-full bg-radial from-[#FF7A8F] via-[#F22D48] to-[#BA0E24] shadow-xs" />

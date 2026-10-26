@@ -26,6 +26,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Check types
+        run: npm run lint
+      - name: Check gameplay rules
+        run: npm run check:gameplay
       - name: Build site
         run: npm run build
       - name: Upload Pages artifact

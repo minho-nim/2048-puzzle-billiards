@@ -40,9 +40,9 @@ export class AimEngine {
     }
 
     const { x: dirX, y: dirY } = normalize(launchDx, launchDy);
-    const clampedDrag = Math.min(dragDist, GAME_CONFIG.MAX_DRAG_DISTANCE);
-    const power = clampedDrag / GAME_CONFIG.MAX_DRAG_DISTANCE;
-    const speed = power * GAME_CONFIG.MAX_LAUNCH_SPEED;
+    // Drag distance selects direction only; every valid shot uses the same speed.
+    const power = 1;
+    const speed = GAME_CONFIG.MAX_LAUNCH_SPEED;
 
     const r = ball.radius;
     const playMinX = this.minX + r;
@@ -94,9 +94,8 @@ export class AimEngine {
       }
     }
 
-    // The maximum travel distance of the aim line is proportional to pull power
-    // Weak pull = short line; strong pull = full line across board
-    const maxAimDist = 30 + power * 490;
+    // Preview the fixed-strength shot.
+    const maxAimDist = 520;
 
     const reachesTarget = nearestT <= maxAimDist && hitType !== 'none';
     const finalHitType = reachesTarget ? hitType : 'none';

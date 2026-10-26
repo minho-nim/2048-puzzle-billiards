@@ -1,15 +1,10 @@
 @import "tailwindcss";
 
-@keyframes life-orb-appear {
-  from { transform: scale(0.42); }
-  to { transform: scale(1); }
-}
-
 @keyframes score-gain {
-  0% { opacity: 0; transform: translateY(4px); }
-  18% { opacity: 1; transform: translateY(0); }
-  78% { opacity: 1; }
-  100% { opacity: 0.72; }
+  0% { opacity: 0; transform: scale(0.8); }
+  25% { opacity: 1; transform: scale(1.22); }
+  55% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.65); }
 }
 
 html, body {

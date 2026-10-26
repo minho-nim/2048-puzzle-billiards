@@ -16,8 +16,8 @@ export interface TurnResult {
 /**
  * Monthly23 2048 Puzzle Billiards Rules:
  * 1. 공을 보충하는 매 턴마다 생명 1개를 소모합니다.
- * 2. 합친 공 개수만큼 생명을 회복합니다.
- * 3. 최대 공 숫자가 새로 커지면 최대 생명이 1 증가합니다.
+ * 2. 합체 순간마다 생명을 1 회복합니다 (엔진에서 즉시 적용).
+ * 3. 검은 글씨 공 합체 시 최대·현재 생명이 추가로 1 증가합니다.
  * 4. 매 턴마다 2 공 1개를 보충한 뒤, 합칠 쌍이 없으면 1개를 더 보충합니다.
  */
 export function evaluateTurn(
@@ -25,22 +25,17 @@ export function evaluateTurn(
   currentBalls: Ball[],
   turnMerges: number,
   turnScoreGained: number,
-  maxBallIncreases: number = 0
+  lifeOverflow: number = 0
 ): TurnResult {
-  // Every new highest-ball record adds one life slot, including multiple records in a chain.
-  const newMaxLife = currentState.maxLife + maxBallIncreases;
-  const maxLifeIncreased = maxBallIncreases > 0;
-
-  // Every turn spends one life; each successful merge refunds one life.
-  // Life cannot drop below zero before merge refunds are applied. This lets a
-  // successful merge restore life during the final chance at zero.
-  const lifeAfterTurn = Math.max(0, currentState.life - 1) + turnMerges;
-  const isGameOver = currentState.life === 0 && turnMerges === 0;
-  const newLife = Math.min(newMaxLife, Math.max(0, lifeAfterTurn));
-  const lifeLost = newLife < currentState.life;
-  const lifeRecovered = newLife > Math.max(0, currentState.life - 1);
-
-  const ballCount = currentBalls.length;
+  // Merge rewards have already been applied. Spend exactly one life when the
+  // replenishment is created. Overflow preserves rewards earned at full life
+  // until this debit, so a successful ordinary merge has a net cost of zero.
+  const newMaxLife = currentState.maxLife;
+  const maxLifeIncreased = false;
+  const isGameOver = currentState.life + lifeOverflow === 0;
+  const newLife = Math.min(newMaxLife, Math.max(0, currentState.life + lifeOverflow - 1));
+  const lifeLost = !isGameOver;
+  const lifeRecovered = false;
   const counts = new Map<number, number>();
   for (const ball of currentBalls) {
     counts.set(ball.value, (counts.get(ball.value) ?? 0) + 1);

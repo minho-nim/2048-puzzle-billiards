@@ -15,6 +15,7 @@ export const GAME_CONFIG = {
   // Physics constants
   PHYSICS_HZ: 120,
   FIXED_DT: 1 / 120,
+  SIMULATION_SPEED: 1.2,
   MAX_SUBSTEPS_PER_FRAME: 8,
   RESTITUTION: 0.94,
   WALL_RESTITUTION: 0.88,

@@ -109,7 +109,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
       ctx.fillRect(width - border, 0, border, height);
 
       // Playfield inner background
-      ctx.fillStyle = '#FAFAFA';
+      ctx.fillStyle = '#F2F2F2';
       ctx.fillRect(border, border, width - border * 2, height - border * 2);
 
       const balls = gameEngine.getBalls();
@@ -247,11 +247,11 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
     ctx.stroke();
   }
 
-  // Soft subtle drop shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetY = 3;
-  ctx.shadowOffsetX = 1;
+  // Offset shadow and broad color reflections follow the supplied ball artwork.
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.18)';
+  ctx.shadowBlur = 1;
+  ctx.shadowOffsetY = 6;
+  ctx.shadowOffsetX = -3;
 
   // Base spherical body: light from upper-left (around 11 o'clock)
   const grad = ctx.createRadialGradient(
@@ -277,19 +277,36 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.04, y + r * 0.06, r * 0.91, r * 0.68, 0, 0, Math.PI);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.11)';
+  ctx.lineWidth = r * 0.25;
+  ctx.stroke();
+
   // Clean soft specular highlight reflection near the top (matching original screenshot)
   ctx.beginPath();
   ctx.ellipse(
-    x + r * 0.08,
-    y - r * 0.44,
-    r * 0.32,
-    r * 0.14,
-    0.22,
+    x + r * 0.12,
+    y - r * 0.4,
+    r * 0.6,
+    r * 0.27,
+    0.45,
     0,
     Math.PI * 2
   );
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
   ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(x, y, r - 0.6, 0, Math.PI * 2);
+  ctx.strokeStyle = color.gradientStart;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
 
   // Draw number text
   const isBlack = Boolean(ball.isBlackNumber);

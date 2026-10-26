@@ -30,6 +30,8 @@ export interface GameState {
   record: number;
   life: number;
   maxLife: number;
+  lifeRevision: number;
+  lifeChangedSlots: number[];
   phase: GamePhase;
   selectedBallId: string | null;
   shots: number;
