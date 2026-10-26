@@ -20,7 +20,7 @@ export interface TurnResult {
  * 2. 실패시 회색으로 바뀌고 모든 생명이 회색이 되면 마지막 기회 1번이 남습니다.
  *    (회색 상태에서 또 실패하면 비로소 Game Over!)
  * 3. 최대 생명은 검은공이 성장할 때마다 1칸 추가.
- * 4. 턴이 끝나면 합칠 쌍이 없을 때 2 공이 총 2개가 되도록 보충합니다.
+ * 4. 매 턴마다 2 공 1개를 보충하며, 합칠 쌍이 없을 때만 1개를 더 보충합니다.
  */
 export function evaluateTurn(
   currentState: GameState,
@@ -70,10 +70,10 @@ export function evaluateTurn(
     counts.set(ball.value, (counts.get(ball.value) ?? 0) + 1);
   }
   const hasAnyPair = Array.from(counts.values()).some((count) => count >= 2);
-  const twosOnBoard = counts.get(2) ?? 0;
   const desiredSpawnCount = hasAnyPair ? 1 : 2;
-  const spawnCount = Math.min(desiredSpawnCount, Math.max(0, 2 - twosOnBoard));
-  const shouldSpawnBall = !isGameOver && ballCount < GAME_CONFIG.MAX_BALLS_ON_BOARD;
+  const availableSlots = Math.max(0, GAME_CONFIG.MAX_BALLS_ON_BOARD - ballCount);
+  const spawnCount = Math.min(desiredSpawnCount, availableSlots);
+  const shouldSpawnBall = !isGameOver && spawnCount > 0;
 
   return {
     mergesCount: turnMerges,
