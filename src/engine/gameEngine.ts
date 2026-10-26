@@ -432,6 +432,9 @@ export class GameEngine {
 
   private updateVisualEffects(dt: number) {
     for (const b of this.balls) {
+      if (b.opacity !== undefined && b.opacity < 1) {
+        b.opacity = Math.min(1, b.opacity + dt * 2.5);
+      }
       if (b.scale !== undefined && b.scale !== 1.0) {
         if (b.scale > 1.0) {
           b.scale = Math.max(1.0, b.scale - dt * 2.5);

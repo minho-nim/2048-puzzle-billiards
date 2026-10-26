@@ -141,7 +141,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ onPointerStateChange }) 
 
       ctx.restore();
 
-      const hasAnimatedBall = balls.some((ball) => ball.isMoving || (ball.scale !== undefined && ball.scale !== 1));
+      const hasAnimatedBall = balls.some((ball) => ball.isMoving || (ball.scale !== undefined && ball.scale !== 1) || (ball.opacity !== undefined && ball.opacity !== 1));
       if (hasAnimatedBall || particles.length > 0 || aimData !== null) requestRender();
     };
 
@@ -236,6 +236,7 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
   const color = getBallColor(ball.value);
 
   ctx.save();
+  ctx.globalAlpha = ball.opacity ?? 1;
 
   // Selection ring for cue ball while aiming
   if (isSelected) {
