@@ -16,10 +16,9 @@ export interface TurnResult {
 
 /**
  * Monthly23 2048 Puzzle Billiards Rules:
- * 1. 생명은 파란칸 1개로 시작합니다.
- * 2. 실패시 회색으로 바뀌고 모든 생명이 회색이 되면 마지막 기회 1번이 남습니다.
- *    (회색 상태에서 또 실패하면 비로소 Game Over!)
- * 3. 최대 생명은 검은공이 성장할 때마다 1칸 추가.
+ * 1. 공을 보충하는 매 턴마다 생명 1개를 소모합니다.
+ * 2. 합친 공 개수만큼 생명을 회복합니다.
+ * 3. 최대 공 숫자가 새로 커지면 최대 생명이 1 증가합니다.
  * 4. 매 턴마다 2 공 1개를 보충한 뒤, 합칠 쌍이 없으면 1개를 더 보충합니다.
  */
 export function evaluateTurn(
@@ -27,42 +26,26 @@ export function evaluateTurn(
   currentBalls: Ball[],
   turnMerges: number,
   turnScoreGained: number,
-  blackMergesCount: number = 0
+  previousMaxBallValue: number = currentState.maxBallValue
 ): TurnResult {
   let newMaxLife = currentState.maxLife;
   let maxLifeIncreased = false;
 
-  // Rule 3: Black ball growth increases Max Life by 1
-  if (blackMergesCount > 0) {
-    const nextMax = Math.min(GAME_CONFIG.MAX_LIFE_CAP, currentState.maxLife + blackMergesCount);
+  // Increase capacity when this turn sets a new highest ball value.
+  if (currentState.maxBallValue > previousMaxBallValue) {
+    const nextMax = Math.min(GAME_CONFIG.MAX_LIFE_CAP, currentState.maxLife + 1);
     if (nextMax > newMaxLife) {
       newMaxLife = nextMax;
       maxLifeIncreased = true;
     }
   }
 
-  let newLife = currentState.life;
-  let isGameOver = false;
-  let lifeLost = false;
-  let lifeRecovered = false;
-
-  if (turnMerges === 0) {
-    // Failed turn
-    if (currentState.life > 0) {
-      // Turn a blue ball into gray
-      newLife = currentState.life - 1;
-      lifeLost = true;
-      // Note: when newLife becomes 0 (all gray), 1 last chance remains!
-    } else {
-      // Already all gray (failed on last chance) -> Game Over!
-      isGameOver = true;
-      lifeLost = true;
-    }
-  } else {
-    // Successful merge: restore 1 blue life ball
-    newLife = Math.min(newMaxLife, currentState.life + 1);
-    lifeRecovered = true;
-  }
+  // Every turn spends one life; each successful merge refunds one life.
+  const lifeAfterTurn = currentState.life - 1 + turnMerges;
+  const isGameOver = currentState.life === 0 && turnMerges === 0;
+  const newLife = Math.min(newMaxLife, Math.max(0, lifeAfterTurn));
+  const lifeLost = newLife < currentState.life;
+  const lifeRecovered = newLife > Math.max(0, currentState.life - 1);
 
   const ballCount = currentBalls.length;
   const counts = new Map<number, number>();

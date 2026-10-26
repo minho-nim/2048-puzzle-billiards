@@ -136,8 +136,8 @@ export function rayBoxIntersection(
 }
 
 /**
- * Dynamically scales ball radii extremely subtly (between 27.6px and 28.8px)
- * and assigns very subtle mass scaling (0.02) so larger balls push smaller balls subtly more!
+ * Scales lower-value balls down as the top value grows while scaling the
+ * current highest-value ball up. Values use logarithmic tiers.
  */
 export function computeDynamicRadii(balls: { value: number; radius: number; mass?: number }[]): void {
   if (balls.length === 0) return;
@@ -145,15 +145,15 @@ export function computeDynamicRadii(balls: { value: number; radius: number; mass
 
   const minLog = 1; // log2(2)
   const maxLog = Math.max(1, Math.log2(maxValue));
-  const logRange = Math.max(1, maxLog - minLog);
+  const tierSpan = maxLog - minLog;
+  const minRadius = Math.max(GAME_CONFIG.MIN_BALL_RADIUS, GAME_CONFIG.BASE_BALL_RADIUS - tierSpan * 0.8);
+  const maxRadius = Math.min(GAME_CONFIG.MAX_BALL_RADIUS, GAME_CONFIG.BASE_BALL_RADIUS + tierSpan * 1.2);
 
   balls.forEach((b) => {
     const curLog = Math.max(minLog, Math.log2(b.value));
-    const ratio = maxLog === minLog ? 0.5 : Math.max(0, Math.min(1, (curLog - minLog) / logRange));
-    // Extremely subtle scaling: 27.6px to 28.8px (1.2px difference)
-    b.radius = 27.6 + ratio * 1.2;
-    // Extremely subtle mass difference: larger balls push smaller balls subtly further
-    b.mass = 1.0 + curLog * 0.02;
+    const ratio = tierSpan === 0 ? 0 : Math.max(0, Math.min(1, (curLog - minLog) / tierSpan));
+    b.radius = minRadius + ratio * (maxRadius - minRadius);
+    b.mass = 1.0 + curLog * 0.04;
   });
 }
 

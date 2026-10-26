@@ -72,6 +72,8 @@ export class MergeEngine {
 
     // Dynamically scale ball radii: max ball becomes subtly larger, smaller balls subtly smaller
     computeDynamicRadii(updatedBalls);
+    newBall.x = clamp(newBall.x, this.minX + newBall.radius, this.maxX - newBall.radius);
+    newBall.y = clamp(newBall.y, this.minY + newBall.radius, this.maxY - newBall.radius);
 
     return {
       updatedBalls,

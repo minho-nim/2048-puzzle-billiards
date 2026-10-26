@@ -6,10 +6,10 @@ export const GAME_CONFIG = {
   BOARD_HEIGHT: 560,
   BOARD_BORDER_THICKNESS: 24,
 
-  // Ball dimensions: Extremely subtle 1.2px spread across entire 2048 hierarchy
+  // Ball dimensions: larger values grow while lower values shrink as the board advances.
   BASE_BALL_RADIUS: 28,
-  MIN_BALL_RADIUS: 27.6,
-  MAX_BALL_RADIUS: 28.8,
+  MIN_BALL_RADIUS: 18,
+  MAX_BALL_RADIUS: 38,
   BALL_MASS: 1.0,
 
   // Physics constants
