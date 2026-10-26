@@ -26,8 +26,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <button
           onClick={onOpenHelp}
           className="w-10 h-10 sm:w-11 sm:h-11 bg-white border-[2.5px] border-black rounded-[4px] flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition-transform shadow-xs cursor-pointer"
-          title="도움말"
-          aria-label="도움말"
+          title="게임 설명"
+          aria-label="게임 설명"
         >
           <span className="text-[22px] font-black text-black leading-none select-none">?</span>
         </button>
@@ -59,8 +59,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <button
           onClick={onHomeClick}
           className="w-10 h-10 sm:w-11 sm:h-11 bg-white border-[2.5px] border-black rounded-[4px] flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition-transform shadow-xs cursor-pointer"
-          title="새 게임 / 처음으로"
-          aria-label="새 게임"
+          title="현재 게임 진행 초기화"
+          aria-label="홈 · 진행 초기화"
         >
           <Home className="w-6 h-6 text-black fill-black" strokeWidth={1.5} />
         </button>

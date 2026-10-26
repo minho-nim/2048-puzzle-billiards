@@ -7,6 +7,7 @@ import { HelpModal } from './components/HelpModal';
 import { RecordModal } from './components/RecordModal';
 import { AchievementModal } from './components/AchievementModal';
 import { GameOverModal } from './components/GameOverModal';
+import { ResetGameDialog } from './components/ResetGameDialog';
 import { gameEngine } from './engine/gameEngine';
 import { GameState, Achievement } from './types/game';
 import { Award } from 'lucide-react';
@@ -16,6 +17,7 @@ export default function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isAchievementOpen, setIsAchievementOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const [recentAchievement, setRecentAchievement] = useState<Achievement | null>(null);
 
   useEffect(() => {
@@ -44,6 +46,24 @@ export default function App() {
 
   const handleRestart = () => {
     gameEngine.initGame();
+    setRecentAchievement(null);
+  };
+
+  const requestReset = () => {
+    gameEngine.cancelAim();
+    gameEngine.stop();
+    setIsResetOpen(true);
+  };
+
+  const cancelReset = () => {
+    setIsResetOpen(false);
+    gameEngine.start();
+  };
+
+  const confirmReset = () => {
+    handleRestart();
+    setIsResetOpen(false);
+    gameEngine.start();
   };
 
   const handleToggleSound = () => {
@@ -59,7 +79,7 @@ export default function App() {
           onOpenHelp={() => setIsHelpOpen(true)}
           onOpenRecords={() => setIsRecordOpen(true)}
           onOpenAchievements={() => setIsAchievementOpen(true)}
-          onHomeClick={handleRestart}
+          onHomeClick={requestReset}
           onToggleSound={handleToggleSound}
           soundEnabled={gameState.soundEnabled}
         />
@@ -95,6 +115,7 @@ export default function App() {
       )}
 
       {/* Modals */}
+      <ResetGameDialog isOpen={isResetOpen} onCancel={cancelReset} onConfirm={confirmReset} />
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <RecordModal isOpen={isRecordOpen} onClose={() => setIsRecordOpen(false)} />
       <AchievementModal
@@ -109,7 +130,7 @@ export default function App() {
         maxBall={gameState.maxBallValue}
         totalMerges={gameState.merges}
         onRestart={handleRestart}
-        onHome={handleRestart}
+        onHome={requestReset}
       />
     </div>
   );
