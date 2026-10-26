@@ -433,7 +433,7 @@ export class GameEngine {
         if (b.scale > 1.0) {
           b.scale = Math.max(1.0, b.scale - dt * 2.5);
         } else if (b.scale < 1.0) {
-          b.scale = Math.min(1.0, b.scale + dt * 0.1);
+          b.scale = Math.min(1.0, b.scale + dt * 0.075);
         }
       }
     }
