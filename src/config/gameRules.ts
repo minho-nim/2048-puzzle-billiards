@@ -1,5 +1,4 @@
 import { Ball, GameState } from '../types/game';
-import { GAME_CONFIG } from './gameConfig';
 
 export interface TurnResult {
   mergesCount: number;
@@ -26,19 +25,11 @@ export function evaluateTurn(
   currentBalls: Ball[],
   turnMerges: number,
   turnScoreGained: number,
-  previousMaxBallValue: number = currentState.maxBallValue
+  maxBallIncreases: number = 0
 ): TurnResult {
-  let newMaxLife = currentState.maxLife;
-  let maxLifeIncreased = false;
-
-  // Increase capacity when this turn sets a new highest ball value.
-  if (currentState.maxBallValue > previousMaxBallValue) {
-    const nextMax = Math.min(GAME_CONFIG.MAX_LIFE_CAP, currentState.maxLife + 1);
-    if (nextMax > newMaxLife) {
-      newMaxLife = nextMax;
-      maxLifeIncreased = true;
-    }
-  }
+  // Every new highest-ball record adds one life slot, including multiple records in a chain.
+  const newMaxLife = currentState.maxLife + maxBallIncreases;
+  const maxLifeIncreased = maxBallIncreases > 0;
 
   // Every turn spends one life; each successful merge refunds one life.
   const lifeAfterTurn = currentState.life - 1 + turnMerges;

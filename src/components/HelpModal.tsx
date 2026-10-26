@@ -154,10 +154,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               {/* Row 1 */}
               <div>
                 <div className="text-[15px] font-black text-[#E87A00]">
-                  턴이 끝날때마다...
+                  공이 보충될 때마다...
                 </div>
                 <div className="text-[15px] font-black text-[#D93845] mb-1">
-                  생명력이 감소합니다.
+                  생명 1개를 사용합니다.
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <div className="w-6 h-6 rounded-full bg-radial from-[#FF7A8F] via-[#F22D48] to-[#BA0E24] shadow-xs" />
@@ -171,10 +171,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               {/* Row 2 */}
               <div>
                 <div className="text-[15px] font-black text-[#E87A00]">
-                  두 공이 합쳐지면...
+                  합체에 성공할 때마다...
                 </div>
                 <div className="text-[15px] font-black text-[#24A85C] mb-1">
-                  생명력이 회복됩니다.
+                  합체 1회마다 생명 1개를 회복합니다.
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <div className="w-6 h-6 rounded-full bg-radial from-[#FF7A8F] via-[#F22D48] to-[#BA0E24] shadow-xs" />
@@ -188,10 +188,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               {/* Row 3 */}
               <div>
                 <div className="text-[15px] font-black text-[#E87A00]">
-                  검은 숫자의 공이 합쳐지면...
+                  최고 공 숫자가 새 기록을 만들면...
                 </div>
                 <div className="text-[15px] font-black text-[#6366F1] mb-1">
-                  최대생명력이 증가합니다.
+                  최대 생명이 1개 증가합니다.
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <div className="w-6 h-6 rounded-full bg-radial from-[#FF7A8F] via-[#F22D48] to-[#BA0E24] shadow-xs" />

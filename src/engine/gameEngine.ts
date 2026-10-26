@@ -41,7 +41,7 @@ export class GameEngine {
   private turnScoreGained: number = 0;
   private currentCombo: number = 0;
   private turnBlackMergesCount: number = 0;
-  private turnStartMaxBallValue: number = 2;
+  private turnMaxBallIncreases: number = 0;
 
   constructor() {
     const record = getStoredRecord();
@@ -78,7 +78,7 @@ export class GameEngine {
     this.currentCombo = 0;
     this.turnScoreGained = 0;
     this.turnBlackMergesCount = 0;
-    this.turnStartMaxBallValue = 2;
+    this.turnMaxBallIncreases = 0;
 
     const record = getStoredRecord();
 
@@ -220,7 +220,7 @@ export class GameEngine {
       this.state.turnMerges = 0;
       this.state.turnBlackMerges = 0;
       this.turnBlackMergesCount = 0;
-      this.turnStartMaxBallValue = this.state.maxBallValue;
+      this.turnMaxBallIncreases = 0;
       this.turnScoreGained = 0;
       this.currentCombo = 0;
 
@@ -336,6 +336,10 @@ export class GameEngine {
             this.state.maxBallValue
           );
 
+          if (scoreUpdate.newMaxBall > this.state.maxBallValue) {
+            this.turnMaxBallIncreases += 1;
+          }
+
           this.state.score = scoreUpdate.newScore;
           this.state.record = scoreUpdate.newRecord;
           this.state.merges = scoreUpdate.newMerges;
@@ -370,7 +374,7 @@ export class GameEngine {
       this.balls,
       this.state.turnMerges,
       this.turnScoreGained,
-      this.turnStartMaxBallValue
+      this.turnMaxBallIncreases
     );
 
     this.state.life = turnResult.newLife;

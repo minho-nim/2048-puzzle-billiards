@@ -31,7 +31,6 @@ export const GAME_CONFIG = {
   // Rules: Starts with 1 blue ball. If it turns gray, 1 last chance remains!
   INITIAL_LIFE: 1,
   INITIAL_MAX_LIFE: 1,
-  MAX_LIFE_CAP: 14,
   MIN_BALLS_ON_BOARD: 2,
   MAX_BALLS_ON_BOARD: 14,
 };
