@@ -66,14 +66,14 @@ export default function App() {
 
         {/* Score & Record Display */}
         <div className="my-2 sm:my-3">
-          <ScoreBoard score={gameState.score} record={gameState.record} />
+          <ScoreBoard score={gameState.score} record={gameState.record} scoreAdded={gameState.turnScoreGained} />
         </div>
 
         {/* Life & Board Container */}
         <div className="w-full flex flex-col items-start">
           {/* Life Indicator directly above board */}
           <div className="mb-1.5 px-0.5">
-            <LifeIndicator life={gameState.life} maxLife={gameState.maxLife} />
+            <LifeIndicator life={gameState.life} maxLife={gameState.maxLife} maxBallValue={gameState.maxBallValue} />
           </div>
 
           {/* Main 2D Billiard Board */}

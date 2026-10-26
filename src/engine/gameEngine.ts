@@ -52,6 +52,7 @@ export class GameEngine {
     this.state = {
       balls: [],
       score: 0,
+      turnScoreGained: 0,
       record,
       life: GAME_CONFIG.INITIAL_LIFE,
       maxLife: GAME_CONFIG.INITIAL_MAX_LIFE,
@@ -86,6 +87,7 @@ export class GameEngine {
       ...this.state,
       balls: this.balls,
       score: 0,
+      turnScoreGained: 0,
       record,
       life: GAME_CONFIG.INITIAL_LIFE,
       maxLife: GAME_CONFIG.INITIAL_MAX_LIFE,
@@ -222,6 +224,7 @@ export class GameEngine {
       this.turnBlackMergesCount = 0;
       this.turnMaxBallIncreases = 0;
       this.turnScoreGained = 0;
+      this.state.turnScoreGained = 0;
       this.currentCombo = 0;
 
       // Update total shots stat
@@ -326,6 +329,7 @@ export class GameEngine {
 
           // Score & achievements
           this.turnScoreGained += mergeResult.scoreGained;
+          this.state.turnScoreGained = this.turnScoreGained;
           this.state.turnMerges += 1;
 
           const scoreUpdate = scoreEngine.processMergeScore(

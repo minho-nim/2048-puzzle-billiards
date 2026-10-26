@@ -26,6 +26,7 @@ export type GamePhase =
 export interface GameState {
   balls: Ball[];
   score: number;
+  turnScoreGained: number;
   record: number;
   life: number;
   maxLife: number;
