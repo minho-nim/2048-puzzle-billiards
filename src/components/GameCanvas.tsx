@@ -400,7 +400,7 @@ function drawAimTrajectory(
 
     // 4. Deflected cue ball path
     if (cueDeflectX !== undefined && cueDeflectY !== undefined) {
-      const deflectLen = 50 + aimData.power * 70;
+    const deflectLen = aimData.cueDeflectLength ?? (50 + aimData.power * 70);
       ctx.beginPath();
       ctx.setLineDash([6, 5]);
       ctx.lineWidth = 3;

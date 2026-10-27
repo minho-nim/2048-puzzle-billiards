@@ -21,6 +21,7 @@ const result = await build({
         `export { soundManager } from ${modulePath('src/utils/audio.ts')};`,
         `export { getStoredProgress, clearStoredProgress, getStoredStats, getStoredSettings } from ${modulePath('src/utils/storage.ts')};`,
         `export { GAME_CONFIG } from ${modulePath('src/config/gameConfig.ts')};`,
+        `export { getDirectCueDeflection } from ${modulePath('src/utils/motion.ts')};`,
       ].join('\n');
     },
   }],
@@ -37,7 +38,7 @@ globalThis.localStorage = {
 };
 globalThis.window = {};
 const { GameEngine, aimEngine, physicsEngine, spawnEngine, mergeEngine, soundManager, getStoredProgress,
-  clearStoredProgress, getStoredStats, getStoredSettings, GAME_CONFIG } = await import(
+  clearStoredProgress, getStoredStats, getStoredSettings, GAME_CONFIG, getDirectCueDeflection } = await import(
   `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
 );
 
@@ -173,8 +174,8 @@ for (const full of [false, true]) {
   const other = ball(4, 280, 430);
   cue.vx = other.vx = 5;
   cue.isMoving = other.isMoving = true;
-  for (let index = 0; index < 45; index++) physicsEngine.step([cue, other]);
-  assert.equal(cue.trail.length, 36, 'cue trail retains the longer 36-point history');
+  for (let index = 0; index < GAME_CONFIG.CUE_TRAIL_POINTS + 10; index++) physicsEngine.step([cue, other]);
+  assert.equal(cue.trail.length, GAME_CONFIG.CUE_TRAIL_POINTS, 'cue trail retains the longer history');
   assert.equal(other.trail, undefined, 'other balls do not leave a trail');
 }
 {
@@ -352,9 +353,54 @@ for (const direction of [1, -1]) {
   physicsEngine.step([slow, moving]);
   assert.equal(slow.x, settledX, 'slow balls settle without lingering drift while other balls move');
   const diagonal = ball(2, 200, 200, true);
-  diagonal.vx = diagonal.vy = GAME_CONFIG.VELOCITY_STOP_THRESHOLD * 0.8;
+  diagonal.vx = diagonal.vy = GAME_CONFIG.VELOCITY_STOP_THRESHOLD * 0.95;
   diagonal.isMoving = true;
   const result = physicsEngine.step([diagonal]);
   assert.equal(result.isAllStopped, false, 'stop threshold uses total speed, not separate axes');
 }
-console.log('Gameplay checks passed: direct merge stop / wall-first continuation, crisp low-speed stopping, five-bounce range, point aiming, persistence, life and animations.');
+{
+  const slow = ball(2, 200, 200, true);
+  slow.vx = 3.5; slow.isMoving = true;
+  let steps = 0;
+  for (; slow.isMoving && steps < 240; steps++) physicsEngine.step([slow]);
+  assert.ok(steps <= GAME_CONFIG.PHYSICS_HZ * 0.5, 'low-speed braking finishes within half a simulated second');
+  assert.ok(slow.x - 200 < 60, 'the end of a roll does not crawl across the table');
+  assert.equal(slow.vx, 0);
+}
+{
+  for (const sameValue of [false, true]) {
+    const cue = ball(2, 180, 280, true);
+    const target = ball(sameValue ? 2 : 8, 300, 315);
+    cue.vx = GAME_CONFIG.MAX_LAUNCH_SPEED; cue.isMoving = true;
+    const aim = aimEngine.calculateAim(cue, { dx: 200, dy: 0 }, [cue, target]);
+    assert.ok(aim.hasCollision && aim.cueDeflectLength > 0 && aim.cueDeflectLength < 50);
+    let deflected = cue;
+    for (let step = 0; step < 100; step++) {
+      const result = physicsEngine.step([cue, target]);
+      if (sameValue && result.merges.length) {
+        deflected = mergeEngine.executeMerge(cue, target, [cue, target]).newBall;
+        break;
+      }
+      if (!sameValue && result.collisions.some((event) => event.type === 'ball')) break;
+    }
+    const speed = Math.hypot(deflected.vx, deflected.vy);
+    assert.ok(speed > GAME_CONFIG.VELOCITY_STOP_THRESHOLD && speed <= GAME_CONFIG.DIRECT_CUE_MAX_RESIDUAL_SPEED);
+    const alignment = deflected.vx / speed * aim.cueDeflectX + deflected.vy / speed * aim.cueDeflectY;
+    assert.ok(alignment > 0.97, 'actual short residual motion follows the shown deflection direction');
+    const start = { x: deflected.x, y: deflected.y };
+    for (let step = 0; deflected.isMoving && step < 80; step++) physicsEngine.step([deflected]);
+    assert.equal(deflected.isMoving, false);
+    assert.ok(Math.hypot(deflected.x - start.x, deflected.y - start.y) < 50, 'direct-hit inertia remains short');
+  }
+  const first = ball(4, 200, 200);
+  const second = ball(8, 260, 200);
+  first.vx = 10; first.isMoving = true;
+  physicsEngine.step([first, second]);
+  assert.ok(Math.hypot(first.vx, first.vy) + Math.hypot(second.vx, second.vy) < 9.1,
+    'ball contact visibly loses speed while transferring momentum');
+  const cue = ball(2, 180, 280, true);
+  const target = ball(8, 300, 280);
+  const headOn = aimEngine.calculateAim(cue, { dx: 200, dy: 0 }, [cue, target]);
+  assert.equal(headOn.cueDeflectLength, 0, 'perfectly centered hit has no misleading sideways arrow');
+}
+console.log('Gameplay checks passed: braking without creep, impact speed loss, short cue tangent motion aligned with preview, wall-first motion, longer trail, five-bounce range, saves and life rules.');

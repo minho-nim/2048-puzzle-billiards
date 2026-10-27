@@ -1,6 +1,7 @@
 import { Ball, AimData } from '../types/game';
 import { GAME_CONFIG } from '../config/gameConfig';
 import { rayCircleIntersection, rayBoxIntersection, normalize, dot, clamp } from '../utils/math';
+import { getDirectCueDeflection, getDeflectionPreviewLength } from '../utils/motion';
 
 export class AimEngine {
   private minX: number;
@@ -122,27 +123,15 @@ export class AimEngine {
       // Normal vector from ghost cue ball to target ball
       const { x: normX, y: normY } = normalize(hitBall.x - ghostX, hitBall.y - ghostY);
 
-      // Tangent vector
-      let tangX = -normY;
-      let tangY = normX;
-
-      // Ensure tangent aligns with cue ball direction
-      if (dot(dirX, dirY, tangX, tangY) < 0) {
-        tangX = -tangX;
-        tangY = -tangY;
-      }
-
-      // Decompose incoming velocity
-      const velNormal = dot(dirX * speed, dirY * speed, normX, normY);
-      const velTang = dot(dirX * speed, dirY * speed, tangX, tangY);
-
       // Target ball receives impulse along collision normal
       aimData.targetDirX = normX;
       aimData.targetDirY = normY;
 
-      // Cue ball deflects along tangent
-      aimData.cueDeflectX = tangX;
-      aimData.cueDeflectY = tangY;
+      const residual = getDirectCueDeflection(dirX * speed, dirY * speed, normX, normY);
+      const residualSpeed = Math.hypot(residual.x, residual.y);
+      aimData.cueDeflectX = residualSpeed > 0 ? residual.x / residualSpeed : 0;
+      aimData.cueDeflectY = residualSpeed > 0 ? residual.y / residualSpeed : 0;
+      aimData.cueDeflectLength = getDeflectionPreviewLength(residualSpeed);
     } else if (reachesTarget && hitType === 'wall') {
       // Reflection vector
       const reflectDot = dot(dirX, dirY, wallNormalX, wallNormalY);

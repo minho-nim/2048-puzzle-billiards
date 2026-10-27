@@ -1,6 +1,7 @@
 import { Ball } from '../types/game';
 import { GAME_CONFIG } from '../config/gameConfig';
 import { dot } from '../utils/math';
+import { getDirectCueDeflection } from '../utils/motion';
 
 export interface CollisionEvent {
   type: 'ball' | 'wall';
@@ -55,7 +56,7 @@ export class PhysicsEngine {
           if (!ball.trail) ball.trail = [];
           if (ball.isMoving) {
             ball.trail.unshift({ x: ball.x, y: ball.y });
-            if (ball.trail.length > 36) ball.trail.pop();
+            if (ball.trail.length > GAME_CONFIG.CUE_TRAIL_POINTS) ball.trail.pop();
           } else if (ball.trail.length > 0) {
             ball.trail.pop();
           }
@@ -73,6 +74,13 @@ export class PhysicsEngine {
 
           b.vx *= frictionFactor;
           b.vy *= frictionFactor;
+
+          const rollingSpeed = Math.hypot(b.vx, b.vy);
+          if (rollingSpeed > 0 && rollingSpeed <= GAME_CONFIG.BRAKE_START_SPEED) {
+            const brakedSpeed = Math.max(0, rollingSpeed - GAME_CONFIG.BRAKE_DECELERATION * subDt);
+            b.vx *= brakedSpeed / rollingSpeed;
+            b.vy *= brakedSpeed / rollingSpeed;
+          }
 
           const speedSq = b.vx * b.vx + b.vy * b.vy;
           if (speedSq <= GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD) {
@@ -186,15 +194,14 @@ export class PhysicsEngine {
               const cueSpeed = cue ? Math.hypot(cue.vx, cue.vy) : 0;
               const cueNormalSpeed = cue ? dot(cue.vx, cue.vy, cueNx, cueNy) : 0;
               const targetStopped = !target.isMoving && Math.hypot(target.vx, target.vy) < GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
-              const directHeadOn = cue && !cue.hasBouncedThisShot && targetStopped
-                && cueSpeed > 0 && cueNormalSpeed / cueSpeed >= 0.999;
-              if (cue && directHeadOn) {
-                // Only a direct, centered first hit transfers the cue's forward
-                // motion. Wall-first and glancing collisions use normal physics.
-                target.vx += cueNx * cueNormalSpeed * restitution;
-                target.vy += cueNy * cueNormalSpeed * restitution;
-                cue.vx = 0;
-                cue.vy = 0;
+              const directHit = cue && !cue.hasBouncedThisShot && targetStopped
+                && cueSpeed > 0 && cueNormalSpeed > 0;
+              if (cue && directHit) {
+                const deflection = getDirectCueDeflection(cue.vx, cue.vy, cueNx, cueNy);
+                target.vx = (target.vx + cueNx * cueNormalSpeed * restitution) * GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
+                target.vy = (target.vy + cueNy * cueNormalSpeed * restitution) * GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
+                cue.vx = deflection.x;
+                cue.vy = deflection.y;
               } else {
                 const impulseScalar = (-(1 + restitution) * velAlongNormal) / (1 / b1.mass + 1 / b2.mass);
 
@@ -205,6 +212,10 @@ export class PhysicsEngine {
                 b1.vy -= (iy / b1.mass);
                 b2.vx += (ix / b2.mass);
                 b2.vy += (iy / b2.mass);
+                b1.vx *= GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
+                b1.vy *= GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
+                b2.vx *= GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
+                b2.vy *= GAME_CONFIG.IMPACT_VELOCITY_RETENTION;
               }
 
               b1.isMoving = (b1.vx * b1.vx + b1.vy * b1.vy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD;

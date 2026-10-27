@@ -61,6 +61,7 @@ export interface AimData {
   targetDirY?: number;
   cueDeflectX?: number;
   cueDeflectY?: number;
+  cueDeflectLength?: number;
   wallNormalX?: number;
   wallNormalY?: number;
 }
