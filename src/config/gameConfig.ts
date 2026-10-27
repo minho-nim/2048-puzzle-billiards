@@ -19,14 +19,14 @@ export const GAME_CONFIG = {
   MAX_SUBSTEPS_PER_FRAME: 8,
   RESTITUTION: 0.94,
   WALL_RESTITUTION: 0.88,
-  FRICTION: 0.99547367,
+  FRICTION: 0.99524789,
   VELOCITY_STOP_THRESHOLD: 0.08,
 
   // Launch and aim controls
   MAX_DRAG_DISTANCE: 180,
   MIN_DRAG_DISTANCE: 6,
   // Centered value-2 cue: five wall bounces, then about 20% of the next crossing.
-  MAX_LAUNCH_SPEED: 26,
+  MAX_LAUNCH_SPEED: 27.3,
   DRAG_SENSITIVITY: 0.16,
   CONTROL_MODE: 'direct' as 'slingshot' | 'direct',
 

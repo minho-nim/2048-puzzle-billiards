@@ -34,7 +34,7 @@ function measure(speed) {
 }
 const target = crossing * (0.5 + 4 + 0.2);
 if (process.argv.includes('--friction')) {
-  const speed = 26;
+  const speed = config.MAX_LAUNCH_SPEED;
   let low = 0.98, high = 0.9999;
   for (let iteration = 0; iteration < 35; iteration++) {
     const middle = (low + high) / 2;

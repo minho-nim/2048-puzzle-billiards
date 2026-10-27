@@ -205,20 +205,24 @@ for (const full of [false, true]) {
   physicsEngine.step([wallCue]);
   assert.equal(wallCue.hasBouncedThisShot, true, 'wall hits are tracked for the whole shot');
 }
-{
+for (const direction of [1, -1]) {
   const cue = ball(2, 280, 280, true);
-  cue.vx = GAME_CONFIG.MAX_LAUNCH_SPEED; cue.isMoving = true;
+  cue.vx = direction * GAME_CONFIG.MAX_LAUNCH_SPEED; cue.isMoving = true;
   let bounces = 0;
   let firstBounceStep = 0;
+  let lastWall = null;
+  const right = GAME_CONFIG.BOARD_WIDTH - GAME_CONFIG.BOARD_BORDER_THICKNESS - cue.radius;
+  const left = GAME_CONFIG.BOARD_BORDER_THICKNESS + cue.radius;
   for (let step = 0; cue.isMoving && step < 10000; step++) {
     const hits = physicsEngine.step([cue]).collisions.filter((event) => event.type === 'wall').length;
     if (hits && firstBounceStep === 0) firstBounceStep = step + 1;
+    if (hits) lastWall = cue.vx < 0 ? right : left;
     bounces += hits;
   }
-  const right = GAME_CONFIG.BOARD_WIDTH - GAME_CONFIG.BOARD_BORDER_THICKNESS - cue.radius;
-  const left = GAME_CONFIG.BOARD_BORDER_THICKNESS + cue.radius;
   assert.equal(bounces, 5, 'centered 2 cue matches five measured wall bounces');
-  assert.ok(Math.abs((right - cue.x) / (right - left) - 0.2) < 0.01, 'then travels approximately 20% toward next wall');
+  const traveledFraction = Math.abs(cue.x - lastWall) / (right - left);
+  assert.ok(Math.abs(traveledFraction - 0.2) < 0.01, 'travels 20% from the fifth wall in either direction');
+  assert.ok(Math.abs((1 - traveledFraction) - 0.8) < 0.01, '80% of the crossing remains, rather than being traveled');
   assert.ok(firstBounceStep / GAME_CONFIG.PHYSICS_HZ / GAME_CONFIG.SIMULATION_SPEED >= 0.1,
     'five-bounce strength must not be achieved by an excessively fast launch');
 }
