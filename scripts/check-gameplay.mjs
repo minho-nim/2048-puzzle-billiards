@@ -17,6 +17,7 @@ const result = await build({
         `export { aimEngine } from ${modulePath('src/engine/aimEngine.ts')};`,
         `export { physicsEngine } from ${modulePath('src/engine/physicsEngine.ts')};`,
         `export { spawnEngine } from ${modulePath('src/engine/spawnEngine.ts')};`,
+        `export { mergeEngine } from ${modulePath('src/engine/mergeEngine.ts')};`,
         `export { soundManager } from ${modulePath('src/utils/audio.ts')};`,
         `export { getStoredProgress, clearStoredProgress, getStoredStats, getStoredSettings } from ${modulePath('src/utils/storage.ts')};`,
         `export { GAME_CONFIG } from ${modulePath('src/config/gameConfig.ts')};`,
@@ -35,7 +36,7 @@ globalThis.localStorage = {
   removeItem: (key) => memory.delete(key),
 };
 globalThis.window = {};
-const { GameEngine, aimEngine, physicsEngine, spawnEngine, soundManager, getStoredProgress,
+const { GameEngine, aimEngine, physicsEngine, spawnEngine, mergeEngine, soundManager, getStoredProgress,
   clearStoredProgress, getStoredStats, getStoredSettings, GAME_CONFIG } = await import(
   `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
 );
@@ -313,4 +314,47 @@ for (const direction of [1, -1]) {
   assert.equal(restored.balls[0].x, 130);
   assert.equal(restored.state.life, 3);
 }
-console.log('Gameplay checks passed: immediate point aiming, slower five-bounce strength, saved-shot speed migration, persistence/reload/restart, direct-only cue stop, existing life and animation rules.');
+{
+  for (const bounced of [false, true]) {
+    const cue = ball(2, 200, 200, true);
+    const target = ball(2, 260, 200);
+    cue.vx = 16; cue.isMoving = true; cue.hasBouncedThisShot = bounced;
+    const engine = engineWith([cue, target], 2, 5);
+    engine.updatePhysics(1 / 120);
+    const merged = engine.getBalls().find((item) => item.value === 4);
+    assert.ok(merged, 'moving same-value balls merge');
+    assert.equal(merged.hasBouncedThisShot, bounced);
+    if (bounced) {
+      assert.ok(merged.vx > 0 && merged.isMoving, 'wall-first merge continues moving');
+    } else {
+      assert.equal(merged.vx, 0, 'direct cue merge stops immediately');
+      assert.equal(merged.vy, 0);
+      assert.equal(merged.isMoving, false);
+      const position = { x: merged.x, y: merged.y };
+      engine.updatePhysics(1 / 120);
+      assert.deepEqual({ x: merged.x, y: merged.y }, position, 'direct merged ball does not creep');
+    }
+  }
+  const first = ball(2, 200, 200);
+  const second = ball(2, 260, 200);
+  first.vx = 10; first.isMoving = true;
+  const ordinary = mergeEngine.executeMerge(first, second, [first, second]);
+  assert.ok(ordinary.newBall.isMoving && ordinary.newBall.vx > 0, 'ordinary moving balls retain merge motion');
+}
+{
+  const slow = ball(2, 150, 150, true);
+  slow.vx = GAME_CONFIG.VELOCITY_STOP_THRESHOLD * 0.8; slow.isMoving = true;
+  const moving = ball(4, 400, 400); moving.vx = 5; moving.isMoving = true;
+  physicsEngine.step([slow, moving]);
+  assert.equal(slow.isMoving, false);
+  assert.equal(slow.vx, 0); assert.equal(slow.vy, 0);
+  const settledX = slow.x;
+  physicsEngine.step([slow, moving]);
+  assert.equal(slow.x, settledX, 'slow balls settle without lingering drift while other balls move');
+  const diagonal = ball(2, 200, 200, true);
+  diagonal.vx = diagonal.vy = GAME_CONFIG.VELOCITY_STOP_THRESHOLD * 0.8;
+  diagonal.isMoving = true;
+  const result = physicsEngine.step([diagonal]);
+  assert.equal(result.isAllStopped, false, 'stop threshold uses total speed, not separate axes');
+}
+console.log('Gameplay checks passed: direct merge stop / wall-first continuation, crisp low-speed stopping, five-bounce range, point aiming, persistence, life and animations.');

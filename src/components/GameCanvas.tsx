@@ -312,12 +312,17 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, isSelected: boolean
   const isBlack = Boolean(ball.isBlackNumber);
   const text = ball.value.toString();
 
-  let fontSize = r * 0.88;
-  if (text.length === 2) fontSize = r * 0.78;
-  if (text.length === 3) fontSize = r * 0.62;
-  if (text.length >= 4) fontSize = r * 0.5;
+  let fontSize = r * 1.08;
+  if (text.length === 2) fontSize = r * 0.98;
+  if (text.length === 3) fontSize = r * 0.78;
+  if (text.length >= 4) fontSize = r * 0.64;
 
   ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`;
+  const textWidth = ctx.measureText(text).width;
+  if (textWidth > r * 1.6) {
+    fontSize *= r * 1.6 / textWidth;
+    ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`;
+  }
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 

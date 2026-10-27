@@ -43,9 +43,14 @@ export class MergeEngine {
     mergedX = clamp(mergedX, this.minX + r, this.maxX - r);
     mergedY = clamp(mergedY, this.minY + r, this.maxY - r);
 
-    // Momentum conservation
-    const mergedVx = (ball1.vx + ball2.vx) * 0.55;
-    const mergedVy = (ball1.vy + ball2.vy) * 0.55;
+    const cue = ball1.isBlackNumber ? ball1 : ball2.isBlackNumber ? ball2 : null;
+    const stopOnDirectMerge = cue !== null && !cue.hasBouncedThisShot;
+    // A direct cue merge settles immediately. A wall-first cue keeps moving,
+    // as do ordinary balls merging during the rest of the shot.
+    let mergedVx = stopOnDirectMerge ? 0 : (ball1.vx + ball2.vx) * 0.55;
+    let mergedVy = stopOnDirectMerge ? 0 : (ball1.vy + ball2.vy) * 0.55;
+    const isMoving = Math.hypot(mergedVx, mergedVy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
+    if (!isMoving) mergedVx = mergedVy = 0;
 
     const remainingBalls = currentBalls.filter(
       (b) => b.id !== ball1.id && b.id !== ball2.id
@@ -60,7 +65,7 @@ export class MergeEngine {
       vy: mergedVy,
       radius: r,
       mass: GAME_CONFIG.BALL_MASS,
-      isMoving: Math.abs(mergedVx) > 0.1 || Math.abs(mergedVy) > 0.1,
+      isMoving,
       isMerging: false,
       mergeCooldown: 8,
       scale: 1,

@@ -75,7 +75,7 @@ export class PhysicsEngine {
           b.vy *= frictionFactor;
 
           const speedSq = b.vx * b.vx + b.vy * b.vy;
-          if (speedSq < GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD) {
+          if (speedSq <= GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD) {
             b.vx = 0;
             b.vy = 0;
             b.isMoving = false;
@@ -209,6 +209,8 @@ export class PhysicsEngine {
 
               b1.isMoving = (b1.vx * b1.vx + b1.vy * b1.vy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
               b2.isMoving = (b2.vx * b2.vx + b2.vy * b2.vy) > GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD;
+              if (!b1.isMoving) b1.vx = b1.vy = 0;
+              if (!b2.isMoving) b2.vx = b2.vy = 0;
 
               const relativeSpeed = Math.abs(velAlongNormal);
               if (relativeSpeed > 0.4) {
@@ -227,7 +229,7 @@ export class PhysicsEngine {
 
     // Determine if all balls are now stopped
     const isAllStopped = balls.every(
-      (b) => !b.isMoving || (Math.abs(b.vx) < GAME_CONFIG.VELOCITY_STOP_THRESHOLD && Math.abs(b.vy) < GAME_CONFIG.VELOCITY_STOP_THRESHOLD)
+      (b) => !b.isMoving || (b.vx * b.vx + b.vy * b.vy <= GAME_CONFIG.VELOCITY_STOP_THRESHOLD * GAME_CONFIG.VELOCITY_STOP_THRESHOLD)
     );
 
     if (isAllStopped) {
