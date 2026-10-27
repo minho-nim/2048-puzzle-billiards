@@ -13,6 +13,7 @@ const result = await build({
     resolveId(id) { if (id === entry) return id; },
     load(id) {
       if (id === entry) return [
+        `export { ReplayBuffer } from ${modulePath('src/replay/replayBuffer.ts')};`,
         `export { GameEngine } from ${modulePath('src/engine/gameEngine.ts')};`,
         `export { aimEngine } from ${modulePath('src/engine/aimEngine.ts')};`,
         `export { physicsEngine } from ${modulePath('src/engine/physicsEngine.ts')};`,
@@ -37,7 +38,7 @@ globalThis.localStorage = {
   removeItem: (key) => memory.delete(key),
 };
 globalThis.window = {};
-const { GameEngine, aimEngine, physicsEngine, spawnEngine, mergeEngine, soundManager, getStoredProgress,
+const { ReplayBuffer, GameEngine, aimEngine, physicsEngine, spawnEngine, mergeEngine, soundManager, getStoredProgress,
   clearStoredProgress, getStoredStats, getStoredSettings, GAME_CONFIG, getDirectCueDeflection } = await import(
   `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
 );
@@ -373,7 +374,7 @@ for (const direction of [1, -1]) {
     const target = ball(sameValue ? 2 : 8, 300, 315);
     cue.vx = GAME_CONFIG.MAX_LAUNCH_SPEED; cue.isMoving = true;
     const aim = aimEngine.calculateAim(cue, { dx: 200, dy: 0 }, [cue, target]);
-    assert.ok(aim.hasCollision && aim.cueDeflectLength > 0 && aim.cueDeflectLength < 50);
+    assert.ok(aim.hasCollision && aim.cueDeflectLength > 0 && aim.cueDeflectLength <= 160);
     let deflected = cue;
     for (let step = 0; step < 100; step++) {
       const result = physicsEngine.step([cue, target]);
@@ -384,13 +385,13 @@ for (const direction of [1, -1]) {
       if (!sameValue && result.collisions.some((event) => event.type === 'ball')) break;
     }
     const speed = Math.hypot(deflected.vx, deflected.vy);
-    assert.ok(speed > GAME_CONFIG.VELOCITY_STOP_THRESHOLD && speed <= GAME_CONFIG.DIRECT_CUE_MAX_RESIDUAL_SPEED);
+    assert.ok(speed > 8, 'glancing contacts must retain substantial tangent momentum rather than being clipped to a stopping speed');
     const alignment = deflected.vx / speed * aim.cueDeflectX + deflected.vy / speed * aim.cueDeflectY;
     assert.ok(alignment > 0.97, 'actual short residual motion follows the shown deflection direction');
     const start = { x: deflected.x, y: deflected.y };
-    for (let step = 0; deflected.isMoving && step < 80; step++) physicsEngine.step([deflected]);
-    assert.equal(deflected.isMoving, false);
-    assert.ok(Math.hypot(deflected.x - start.x, deflected.y - start.y) < 50, 'direct-hit inertia remains short');
+    for (let step = 0; step < 60; step++) physicsEngine.step([deflected]);
+    assert.equal(deflected.isMoving, true, 'grazing merge and nonmerge contacts keep rolling');
+    assert.ok(Math.hypot(deflected.x - start.x, deflected.y - start.y) > 50, 'grazing contact is not mistaken for a head-on stop');
   }
   const first = ball(4, 200, 200);
   const second = ball(8, 260, 200);
@@ -403,4 +404,43 @@ for (const direction of [1, -1]) {
   const headOn = aimEngine.calculateAim(cue, { dx: 200, dy: 0 }, [cue, target]);
   assert.equal(headOn.cueDeflectLength, 0, 'perfectly centered hit has no misleading sideways arrow');
 }
-console.log('Gameplay checks passed: braking without creep, impact speed loss, short cue tangent motion aligned with preview, wall-first motion, longer trail, five-bounce range, saves and life rules.');
+console.log('Gameplay checks passed: braking without creep, impact speed loss, grazing cue motion aligned with preview, wall-first motion, longer trail, five-bounce range, saves and life rules.');
+
+// Replay starts on aiming, discards cancellations, keeps complete shots only,
+// includes replenishment and preserves timings across pauses.
+{
+  const buffer = new ReplayBuffer();
+  const cue = ball(2, 200, 200, true);
+  const state = { ...new GameEngine().getState(), balls: [cue], shots: 0, phase: 'aiming', selectedBallId: cue.id };
+  const scene = { balls: [cue], aimData: { startBall: cue, dirX: 1, dirY: 0, power: 1, speed: 27 }, particles: [], selectedBallId: cue.id };
+  buffer.capture(scene, state, 0);
+  buffer.capture({ ...scene, aimData: null }, { ...state, phase: 'ready' }, 100);
+  assert.equal(buffer.isRecording(), false, 'cancelled aim is not a completed shot');
+  assert.equal(buffer.getCount(), 0);
+  for (let shot = 1; shot <= 3; shot++) {
+    const start = shot * 10000;
+    buffer.capture(scene, { ...state, shots: shot - 1 }, start);
+    cue.x = 220;
+    buffer.capture({ ...scene, aimData: { ...scene.aimData, dirX: 0, dirY: 1 } }, { ...state, shots: shot - 1 }, start + 100);
+    buffer.setPaused(true, start + 150);
+    buffer.setPaused(false, start + 1150);
+    buffer.capture({ ...scene, aimData: null }, { ...state, shots: shot, phase: 'simulating' }, start + 1200);
+    assert.equal(buffer.getCount(), Math.min(2, shot - 1), 'unfinished shots never replace completed shots');
+    const spawned = ball(2, 400, 400);
+    buffer.capture({ ...scene, balls: [cue, spawned], aimData: null }, { ...state, shots: shot, phase: 'ready', life: 0 }, start + 1500);
+    buffer.capture({ ...scene, balls: [cue, spawned], aimData: null }, { ...state, shots: shot, phase: 'ready', life: 0 }, start + 1900);
+    assert.equal(buffer.getCount(), Math.min(2, shot));
+    const saved = buffer.getShots().at(-1);
+    assert.ok(saved.frames[0].scene.aimData, 'initial aiming line is recorded');
+    assert.equal(saved.frames[1].scene.aimData.dirY, 1, 'aiming changes are recorded');
+    assert.equal(saved.frames.at(-1).scene.balls.length, 2, 'spawned ball is included at the end');
+    assert.equal(saved.frames.at(-1).life, 0);
+    assert.ok(saved.duration < 1100, 'paused time is excluded from movie');
+    const isolated = buffer.getShots();
+    isolated[0].frames.length = 0;
+    assert.ok(buffer.getShots()[0].frames.length, 'export snapshots cannot mutate the buffer');
+  }
+  buffer.reset();
+  assert.equal(buffer.getCount(), 0, 'restarting clears the previous game replay');
+  console.log('Replay checks passed: aiming through replenishment, cancellation, pause timing, last two completed shots.');
+}

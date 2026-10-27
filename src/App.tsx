@@ -7,6 +7,8 @@ import { HelpModal } from './components/HelpModal';
 import { RecordModal } from './components/RecordModal';
 import { AchievementModal } from './components/AchievementModal';
 import { GameOverModal } from './components/GameOverModal';
+import { ReplayDialog } from './components/ReplayDialog';
+import { replayBuffer } from './replay/replayBuffer';
 import { ResetGameDialog } from './components/ResetGameDialog';
 import { gameEngine } from './engine/gameEngine';
 import { GameState, Achievement } from './types/game';
@@ -18,6 +20,9 @@ export default function App() {
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isAchievementOpen, setIsAchievementOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isReplayOpen, setIsReplayOpen] = useState(false);
+  const [replayCount, setReplayCount] = useState(replayBuffer.getCount());
+  useEffect(() => replayBuffer.subscribe(() => setReplayCount(replayBuffer.getCount())), []);
   const [recentAchievement, setRecentAchievement] = useState<Achievement | null>(null);
 
   useEffect(() => {
@@ -49,10 +54,12 @@ export default function App() {
     const checkpointAndStop = () => {
       gameEngine.checkpoint();
       gameEngine.stop();
+      replayBuffer.setPaused(true);
     };
     const onVisibilityChange = () => {
       if (document.hidden) checkpointAndStop();
-      else if (!isResetOpen) gameEngine.start();
+      else if (!isResetOpen && !isReplayOpen) { replayBuffer.setPaused(false); gameEngine.start(); }
+      else checkpointAndStop();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', checkpointAndStop);
@@ -63,9 +70,10 @@ export default function App() {
       window.removeEventListener('pagehide', checkpointAndStop);
       window.removeEventListener('pageshow', onVisibilityChange);
     };
-  }, [isResetOpen]);
+  }, [isResetOpen, isReplayOpen]);
 
   const handleRestart = () => {
+    replayBuffer.reset();
     gameEngine.initGame();
     setRecentAchievement(null);
   };
@@ -103,6 +111,8 @@ export default function App() {
           onHomeClick={requestReset}
           onToggleSound={handleToggleSound}
           soundEnabled={gameState.soundEnabled}
+          replayCount={replayCount}
+          onReplay={() => { gameEngine.cancelAim(); setIsReplayOpen(true); }}
         />
 
         {/* Score & Record Display */}
@@ -136,6 +146,7 @@ export default function App() {
       )}
 
       {/* Modals */}
+      <ReplayDialog isOpen={isReplayOpen} onClose={() => setIsReplayOpen(false)} />
       <ResetGameDialog isOpen={isResetOpen} onCancel={cancelReset} onConfirm={confirmReset} />
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <RecordModal isOpen={isRecordOpen} onClose={() => setIsRecordOpen(false)} />
@@ -150,6 +161,8 @@ export default function App() {
         record={gameState.record}
         maxBall={gameState.maxBallValue}
         totalMerges={gameState.merges}
+        onReplay={() => setIsReplayOpen(true)}
+        replayCount={replayCount}
         onRestart={handleRestart}
         onHome={requestReset}
       />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Award, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Crown, Award, RotateCcw, Volume2, VolumeX, Clapperboard } from 'lucide-react';
 
 interface GameHeaderProps {
   onOpenHelp: () => void;
@@ -8,6 +8,8 @@ interface GameHeaderProps {
   onHomeClick: () => void;
   onToggleSound: () => void;
   soundEnabled: boolean;
+  onReplay: () => void;
+  replayCount: number;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -17,11 +19,13 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onHomeClick,
   onToggleSound,
   soundEnabled,
+  onReplay,
+  replayCount,
 }) => {
   return (
     <header className="w-full flex items-center justify-between px-2 pt-3 pb-1 select-none">
       {/* Left button group */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         {/* Help button */}
         <button
           onClick={onOpenHelp}
@@ -54,7 +58,12 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       </div>
 
       {/* Right button group */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
+        <button onClick={onReplay} disabled={replayCount === 0}
+          title="최근 완료된 두 샷 저장" aria-label="리플레이 저장"
+          className="w-10 h-10 sm:w-11 sm:h-11 bg-white border-[2.5px] border-black rounded-[4px] flex items-center justify-center disabled:opacity-30 cursor-pointer disabled:cursor-default">
+          <Clapperboard className="w-6 h-6" strokeWidth={2} />
+        </button>
         {/* Restart button */}
         <button
           onClick={onHomeClick}

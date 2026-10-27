@@ -9,6 +9,8 @@ interface GameOverModalProps {
   totalMerges: number;
   onRestart: () => void;
   onHome: () => void;
+  onReplay: () => void;
+  replayCount: number;
 }
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
@@ -19,6 +21,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   totalMerges,
   onRestart,
   onHome,
+  onReplay,
+  replayCount,
 }) => {
   if (!isOpen) return null;
 
@@ -72,6 +76,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         <div className="flex flex-col gap-2.5">
+          <button onClick={onReplay} disabled={replayCount === 0}
+            className="w-full py-2.5 border-2 border-black rounded-lg font-bold disabled:opacity-30 cursor-pointer">리플레이 저장</button>
           <button
             onClick={onRestart}
             className="w-full py-3 bg-black text-white font-bold text-base rounded-lg border-2 border-black hover:bg-neutral-800 active:scale-98 transition-transform flex items-center justify-center gap-2 cursor-pointer shadow-sm"
