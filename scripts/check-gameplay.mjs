@@ -209,13 +209,18 @@ for (const full of [false, true]) {
   const cue = ball(2, 280, 280, true);
   cue.vx = GAME_CONFIG.MAX_LAUNCH_SPEED; cue.isMoving = true;
   let bounces = 0;
+  let firstBounceStep = 0;
   for (let step = 0; cue.isMoving && step < 10000; step++) {
-    bounces += physicsEngine.step([cue]).collisions.filter((event) => event.type === 'wall').length;
+    const hits = physicsEngine.step([cue]).collisions.filter((event) => event.type === 'wall').length;
+    if (hits && firstBounceStep === 0) firstBounceStep = step + 1;
+    bounces += hits;
   }
   const right = GAME_CONFIG.BOARD_WIDTH - GAME_CONFIG.BOARD_BORDER_THICKNESS - cue.radius;
   const left = GAME_CONFIG.BOARD_BORDER_THICKNESS + cue.radius;
   assert.equal(bounces, 5, 'centered 2 cue matches five measured wall bounces');
   assert.ok(Math.abs((right - cue.x) / (right - left) - 0.2) < 0.01, 'then travels approximately 20% toward next wall');
+  assert.ok(firstBounceStep / GAME_CONFIG.PHYSICS_HZ / GAME_CONFIG.SIMULATION_SPEED >= 0.1,
+    'five-bounce strength must not be achieved by an excessively fast launch');
 }
 {
   const engine = engineWith([ball(8, 130, 180, true), ball(4, 420, 430)], 2, 5);
@@ -273,8 +278,35 @@ for (const full of [false, true]) {
   const engine = engineWith([ball(2, 280, 280, true)], 1, 1);
   engine.state.phase = 'ready';
   engine.balls[0].hasBouncedThisShot = true;
-  engine.handlePointerDown(100, 100); engine.handlePointerMove(120, 100); engine.handlePointerUp();
-  assert.ok(engine.balls[0].vx > 0, 'actual shot follows the finger direction');
+  engine.handlePointerDown(420, 280);
+  assert.ok(engine.getAimData()?.dirX > 0, 'pointer down immediately previews the pressed location');
+  engine.handlePointerUp();
+  assert.ok(engine.balls[0].vx > 0, 'press and release fires without dragging');
+  assert.equal(engine.state.shots, 1);
   assert.equal(engine.balls[0].hasBouncedThisShot, false, 'a fresh shot resets wall history');
 }
-console.log('Gameplay checks passed: persistence/reload/restart, direct controls, five-bounce calibration, direct-only cue stop, existing life and animation rules.');
+{
+  const engine = engineWith([ball(2, 280, 280, true)], 1, 1);
+  engine.state.phase = 'ready';
+  engine.handlePointerDown(420, 280);
+  assert.ok(engine.getAimData().dirX > 0);
+  engine.handlePointerMove(280, 420);
+  assert.ok(engine.getAimData().dirY > 0.99, 'aim follows the new pointer location');
+  engine.handlePointerUp();
+  assert.ok(engine.balls[0].vy > 0);
+}
+{
+  const cue = ball(2, 130, 130, true);
+  cue.vx = 86.56; cue.isMoving = true;
+  const engine = engineWith([cue, ball(8, 440, 440)], 3, 5);
+  engine.checkpoint();
+  const saved = JSON.parse(memory.get('puzzleBilliards:v1:progress'));
+  delete saved.launchSpeed;
+  memory.set('puzzleBilliards:v1:progress', JSON.stringify(saved));
+  const restored = new GameEngine();
+  assert.ok(Math.abs(restored.balls[0].vx - GAME_CONFIG.MAX_LAUNCH_SPEED) < 1e-9,
+    'unfinished legacy shots must not resume at the old excessive speed');
+  assert.equal(restored.balls[0].x, 130);
+  assert.equal(restored.state.life, 3);
+}
+console.log('Gameplay checks passed: immediate point aiming, slower five-bounce strength, saved-shot speed migration, persistence/reload/restart, direct-only cue stop, existing life and animation rules.');

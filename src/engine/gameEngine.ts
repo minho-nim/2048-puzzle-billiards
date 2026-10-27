@@ -153,13 +153,18 @@ export class GameEngine {
       currentCombo: this.currentCombo,
       turnBlackMergesCount: this.turnBlackMergesCount,
       resolveDelay: Math.max(0, this.resolveNotBefore - now),
+      launchSpeed: GAME_CONFIG.MAX_LAUNCH_SPEED,
     });
     this.lastCheckpointTime = now;
   }
 
   private restoreProgress(progress: StoredGameProgress) {
+    // The first saved-game build launched at 86.56. Bring any unfinished old
+    // shot into the new speed range while keeping its board position/rewards.
+    const velocityScale = GAME_CONFIG.MAX_LAUNCH_SPEED / (progress.launchSpeed ?? 86.56);
     this.balls = progress.state.balls.map((ball) => ({
-      ...ball, trail: undefined, pulseAge: undefined, scale: 1, opacity: 1,
+      ...ball, vx: ball.vx * velocityScale, vy: ball.vy * velocityScale,
+      trail: undefined, pulseAge: undefined, scale: 1, opacity: 1,
     }));
     this.state = {
       ...progress.state,
@@ -230,7 +235,9 @@ export class GameEngine {
     this.dragOrigin = { x, y };
     this.state.phase = 'aiming';
     this.state.selectedBallId = cueBall.id;
-    this.aimData = null;
+    this.aimData = aimEngine.calculateAim(
+      cueBall, { dx: x - cueBall.x, dy: y - cueBall.y }, this.balls, 'direct'
+    );
     this.notifyState();
     return true;
   }
@@ -240,8 +247,8 @@ export class GameEngine {
       return;
     }
 
-    const dx = x - this.dragOrigin.x;
-    const dy = y - this.dragOrigin.y;
+    const dx = x - this.selectedBall.x;
+    const dy = y - this.selectedBall.y;
 
     const settings = getStoredSettings();
     this.aimData = aimEngine.calculateAim(

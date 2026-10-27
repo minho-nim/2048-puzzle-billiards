@@ -119,6 +119,7 @@ export interface StoredGameProgress {
   currentCombo: number;
   turnBlackMergesCount: number;
   resolveDelay: number;
+  launchSpeed?: number;
 }
 
 export function getStoredProgress(): StoredGameProgress | null {
@@ -127,6 +128,7 @@ export function getStoredProgress(): StoredGameProgress | null {
     if (!value) return null;
     const progress = JSON.parse(value) as StoredGameProgress;
     if (progress.version !== 1 || !progress.state) return null;
+    if (progress.launchSpeed !== undefined && (!Number.isFinite(progress.launchSpeed) || progress.launchSpeed <= 0)) return null;
     const state = progress.state;
     const counters = [state.score, state.record, state.life, state.maxLife, state.shots,
       state.merges, state.turnMerges, state.turnBlackMerges, state.maxBallValue,

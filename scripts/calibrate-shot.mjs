@@ -23,14 +23,29 @@ function measure(speed) {
   const ball = { id: 'calibration', value: 2, x: config.BOARD_WIDTH / 2, y: config.BOARD_HEIGHT / 2,
     vx: speed, vy: 0, radius, mass: 1, isMoving: true, isMerging: false, mergeCooldown: 0, isBlackNumber: true };
   let bounces = 0;
-  for (let step = 0; ball.isMoving && step < 10000; step++) {
+  let steps = 0;
+  for (; ball.isMoving && steps < 20000; steps++) {
     bounces += physicsEngine.step([ball], 4).collisions.filter((event) => event.type === 'wall').length;
   }
   const afterBounce = bounces % 2 ? right - ball.x : ball.x - left;
   const distance = bounces ? crossing / 2 + (bounces - 1) * crossing + afterBounce : ball.x - config.BOARD_WIDTH / 2;
-  return { bounces, fractionAfterBounce: afterBounce / crossing, distance };
+  return { bounces, fractionAfterBounce: afterBounce / crossing, distance,
+    durationSeconds: steps / config.PHYSICS_HZ / config.SIMULATION_SPEED };
 }
 const target = crossing * (0.5 + 4 + 0.2);
+if (process.argv.includes('--friction')) {
+  const speed = 26;
+  let low = 0.98, high = 0.9999;
+  for (let iteration = 0; iteration < 35; iteration++) {
+    const middle = (low + high) / 2;
+    config.FRICTION = middle;
+    if (measure(speed).distance < target) low = middle; else high = middle;
+  }
+  config.FRICTION = Math.round((low + high) / 2 * 1e8) / 1e8;
+  console.log(JSON.stringify({ recommendedSpeed: speed, recommendedFriction: config.FRICTION,
+    ...measure(speed), targetBounces: 5, targetFraction: 0.2 }, null, 2));
+  process.exit(0);
+}
 let low = 1, high = 200;
 for (let iteration = 0; iteration < 35; iteration++) {
   const middle = (low + high) / 2;
